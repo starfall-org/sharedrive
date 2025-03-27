@@ -28,7 +28,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  String videoSource = "";
+  String videoSource = "https://collection-api.deno.dev/hls/20250323204153.m3u8";
   final TextEditingController _urlController = TextEditingController();
 
   void _changeSource(String sourceUrl) {
