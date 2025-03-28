@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     xz-utils \
     zip \
     libglu1-mesa \
-    openjdk-11-jdk-headless \
+    openjdk-21-jdk-headless \
     wget \
     clang \
     cmake \
@@ -77,7 +77,7 @@ ENV PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-too
 
 # Chấp nhận giấy phép Android
 RUN yes | sdkmanager --licenses \
-    && sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+    && sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
 # Đặt điểm vào cho container
 CMD ["bash"]
