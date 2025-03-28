@@ -1,0 +1,2 @@
+/root/mediaplus/android/app/.cxx/Debug/2y6b5s51/x86/CMakeFiles/edit_cache.dir
+/root/mediaplus/android/app/.cxx/Debug/2y6b5s51/x86/CMakeFiles/rebuild_cache.dir
