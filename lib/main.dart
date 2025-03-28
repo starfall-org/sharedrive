@@ -30,9 +30,7 @@ class VideoPlayerScreen extends StatefulWidget {
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   VideoPlayerController? _controller;
-  final TextEditingController _urlController = TextEditingController(
-    text: "https://collection-api.deno.dev/hls/20250323204153.m3u8",
-  );
+  final TextEditingController _urlController = TextEditingController();
 
   @override
   void initState() {
@@ -97,10 +95,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         title: const Text('Video Player'),
         backgroundColor: Colors.deepPurple,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.link),
-            onPressed: _showUrlDialog,
-          ),
+          IconButton(icon: const Icon(Icons.link), onPressed: _showUrlDialog),
         ],
       ),
       body: Center(
@@ -116,17 +111,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     if (_controller == null || !_controller!.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
-    
+
     double aspectRatio = _controller!.value.aspectRatio;
-    aspectRatio = aspectRatio > 2.0 ? 16 / 9 : (aspectRatio < 0.5 ? 9 / 16 : aspectRatio);
+    aspectRatio =
+        aspectRatio > 2.0 ? 16 / 9 : (aspectRatio < 0.5 ? 9 / 16 : aspectRatio);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        AspectRatio(
-          aspectRatio: aspectRatio,
-          child: VideoPlayer(_controller!),
-        ),
+        AspectRatio(aspectRatio: aspectRatio, child: VideoPlayer(_controller!)),
         VideoProgressIndicator(_controller!, allowScrubbing: true),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
