@@ -158,13 +158,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       body: Row(
         children: [
           _buildDrawer(),
-          Expanded(
+          Flexible(
             child: Stack(
               children: [
                 SafeArea(
                   child: Center(
                     child: SingleChildScrollView(
-                      // Thêm SingleChildScrollView
+                      
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[playerWidget()],
@@ -192,78 +192,86 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   Widget playerWidget() {
-    if (_controller == null || !_controller!.value.isInitialized) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    double aspectRatio = _controller!.value.aspectRatio;
-    aspectRatio =
-        aspectRatio > 2.0 ? 16 / 9 : (aspectRatio < 0.5 ? 9 / 16 : aspectRatio);
-
     return LayoutBuilder(
       builder: (context, constraints) {
-        final maxWidth =
-            _isLandscape
-                ? constraints.maxHeight * aspectRatio
-                : constraints.maxWidth;
-        final maxHeight = maxWidth / aspectRatio;
+        double screenWidth = constraints.maxWidth;
+        double screenHeight = constraints.maxHeight;
+        double videoWidth = screenWidth;
+        double videoHeight = screenWidth / 16 * 9; // Mặc định tỷ lệ 16:9
+
+        if (_controller != null && _controller!.value.isInitialized) {
+          videoHeight = screenWidth / _controller!.value.aspectRatio;
+          
+          if (_isLandscape) {
+            videoHeight = screenHeight;
+            videoWidth = videoHeight * _controller!.value.aspectRatio;
+            
+            if (videoWidth > screenWidth) {
+              videoWidth = screenWidth;
+              videoHeight = screenWidth / _controller!.value.aspectRatio;
+            }
+          } else {
+            if (videoHeight > screenHeight) {
+              videoHeight = screenHeight;
+              videoWidth = videoHeight * _controller!.value.aspectRatio;
+            }
+          }
+        }
 
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              width: maxWidth,
-              height: maxHeight,
-              child: VideoPlayer(_controller!),
+              width: videoWidth,
+              height: videoHeight,
+              child: _controller != null && _controller!.value.isInitialized
+                  ? VideoPlayer(_controller!)
+                  : const Center(child: CircularProgressIndicator()),
             ),
             SizedBox(
-              width: maxWidth,
-              child: VideoProgressIndicator(_controller!, allowScrubbing: true),
+              width: videoWidth,
+              child: _controller != null 
+                  ? VideoProgressIndicator(_controller!, allowScrubbing: true)
+                  : const SizedBox(height: 4, child: LinearProgressIndicator()),
             ),
             SizedBox(
-              width: maxWidth,
+              width: videoWidth,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
                     icon: const Icon(Icons.replay_10, color: Colors.white),
-                    onPressed: () {
+                    onPressed: _controller != null ? () {
                       _controller!.seekTo(
-                        _controller!.value.position -
-                            const Duration(seconds: 10),
+                        _controller!.value.position - const Duration(seconds: 10),
                       );
-                    },
+                    } : null,
                   ),
                   IconButton(
                     icon: Icon(
-                      _controller!.value.isPlaying
-                          ? Icons.pause
-                          : Icons.play_arrow,
+                      _controller?.value.isPlaying == true ? Icons.pause : Icons.play_arrow,
                       color: Colors.white,
                     ),
-                    onPressed: () {
+                    onPressed: _controller != null ? () {
                       setState(() {
                         _controller!.value.isPlaying
                             ? _controller!.pause()
                             : _controller!.play();
                       });
-                    },
+                    } : null,
                   ),
                   IconButton(
                     icon: const Icon(Icons.forward_10, color: Colors.white),
-                    onPressed: () {
+                    onPressed: _controller != null ? () {
                       _controller!.seekTo(
-                        _controller!.value.position +
-                            const Duration(seconds: 10),
+                        _controller!.value.position + const Duration(seconds: 10),
                       );
-                    },
+                    } : null,
                   ),
                   IconButton(
                     icon: Icon(
-                      _isLandscape
-                          ? Icons.screen_rotation
-                          : Icons.screen_lock_rotation,
-                      color: Colors.white,
+                      _isLandscape ? Icons.screen_rotation : Icons.screen_lock_rotation,
+                      color: Colors.white
                     ),
                     onPressed: _toggleOrientation,
                   ),
@@ -272,7 +280,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             ),
           ],
         );
-      },
+      }
     );
   }
 }
