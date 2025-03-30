@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:mediaplus/screens/drive.dart';
+import 'package:mediaplus/widgets/bottom_bar.dart';
+import 'package:mediaplus/widgets/side_menu.dart';
+import 'package:mediaplus/widgets/top_bar.dart';
 import 'screens/home.dart';
 import 'themes/theme_data.dart';
 
@@ -13,28 +15,20 @@ class App extends StatefulWidget {
 }
 
 class AppState extends State<App> {
-  @override
-  void dispose() {
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    super.dispose();
-  }
+  int _selectedIndex = 0;
 
-  void showAlertDialog({String? title, String? message}) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title ?? "Alert"),
-          content: Text(message ?? ""),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("OK"),
-            ),
-          ],
-        );
-      },
-    );
+  final List<Widget> _widgetOptions = <Widget>[
+    HomeScreen(),
+    DriveScreen(),
+    Text('Hồ sơ', style: TextStyle(fontSize: 24)),
+  ];
+
+  void _onItemTapped(int index) {
+    if (_selectedIndex != index) {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
   }
 
   @override
@@ -45,14 +39,25 @@ class AppState extends State<App> {
           theme: lightTheme(lightDynamic),
           darkTheme: darkTheme(darkDynamic),
           themeMode: ThemeMode.system,
-          initialRoute: '/',
-          routes: {
-            '/': (context) => HomeScreen(),
-            '/drive': (context) => DriveScreen(),
-            '/photos': (context) => HomeScreen(),
-          },
 
-          debugShowCheckedModeBanner: true,
+          home: SafeArea(
+            child: Scaffold(
+              drawer: const SideMenuWidget(),
+              appBar: TopBarWidget(
+                screen:
+                    _selectedIndex == 0
+                        ? "Home"
+                        : _selectedIndex == 1
+                        ? "Drive"
+                        : "Photos",
+              ),
+              body: Center(child: _widgetOptions[_selectedIndex]),
+              bottomNavigationBar: BottomBarWidget(
+                selectedIndex: _selectedIndex,
+                onItemTapped: _onItemTapped,
+              ),
+            ),
+          ),
         );
       },
     );
