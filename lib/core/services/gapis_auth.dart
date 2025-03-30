@@ -10,12 +10,7 @@ class GapisAuth {
       ),
     );
 
-    final scopes = [
-      'https://www.googleapis.com/auth/spreadsheets',
-      'https://www.googleapis.com/auth/drive',
-      'https://www.googleapis.com/auth/calendar',
-      'https://www.googleapis.com/auth/gmail.send',
-    ];
+    final scopes = ['https://www.googleapis.com/auth/drive'];
 
     final client = await clientViaServiceAccount(
       serviceAccountCredentials,

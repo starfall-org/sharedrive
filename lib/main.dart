@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'core/providers/video_settings.dart';
-import 'app.dart';
+import 'package:mediaplus/core/providers/video_settings.dart';
+import 'package:mediaplus/app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

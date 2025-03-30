@@ -4,16 +4,42 @@ import 'package:video_player/video_player.dart';
 import 'package:provider/provider.dart';
 import '../core/providers/video_settings.dart';
 
-class VideoPlayer extends StatefulWidget {
+class Video extends StatelessWidget {
   final String videoUrl;
 
-  const VideoPlayer({super.key, required this.videoUrl});
+  const Video({super.key, required this.videoUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        body: VideoPlayerWidget(videoUrl: videoUrl),
+        onEndDrawerChanged: (isOpened) {
+          if (!isOpened) {
+            Navigator.pop(context);
+          }
+        },
+      ),
+    );
+  }
+}
+
+class VideoPlayerWidget extends StatefulWidget {
+  final String videoUrl;
+
+  const VideoPlayerWidget({super.key, required this.videoUrl});
 
   @override
   VideoPlayerWidgetState createState() => VideoPlayerWidgetState();
 }
 
-class VideoPlayerWidgetState extends State<VideoPlayer> {
+class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
   bool _isInitializing = true;

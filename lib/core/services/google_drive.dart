@@ -3,7 +3,8 @@ import 'dart:io' as io;
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis_auth/googleapis_auth.dart';
 import 'package:path_provider/path_provider.dart';
-import './gapis_auth.dart';
+import 'package:flutter/services.dart';
+import 'package:mediaplus/core/services/gapis_auth.dart';
 
 class GoogleDriveService {
   late AuthClient _client;
@@ -22,11 +23,11 @@ class GoogleDriveService {
       drive.FileList fileList = await _driveApi.files.list();
       files = fileList.files ?? [];
     } catch (e) {
-      print("Lỗi khi danh sách file: $e");
+      throw Exception('Failed to list files: $e');
     }
   }
 
-  Future<void> downloadFile(String fileId, String fileName) async {
+  Future downloadFile(String fileId, String fileName) async {
     try {
       var media = await _driveApi.files.get(
         fileId,
@@ -43,11 +44,10 @@ class GoogleDriveService {
         String savePath = '${directory.path}/$fileName';
         io.File file = io.File(savePath);
         await file.writeAsBytes(bytes);
-
-        print("Tải file thành công: $savePath");
+        return savePath;
       }
     } catch (e) {
-      print("Lỗi khi tải file: $e");
+      throw Exception('Failed to download file: $e');
     }
   }
 
@@ -55,16 +55,40 @@ class GoogleDriveService {
     try {
       io.File file = io.File(filePath);
       var media = drive.Media(file.openRead(), file.lengthSync());
-
       var driveFile = drive.File()..name = file.uri.pathSegments.last;
-      var response = await _driveApi.files.create(
-        driveFile,
-        uploadMedia: media,
+      await _driveApi.files.create(driveFile, uploadMedia: media);
+    } catch (e) {
+      throw Exception('Failed to upload file: $e');
+    }
+  }
+
+  Future<String> loadVideoToCache(String fileId, String fileName) async {
+    try {
+      final cacheDir = await getTemporaryDirectory();
+      final cachePath = '${cacheDir.path}/$fileName';
+      final cacheFile = io.File(cachePath);
+
+      if (await cacheFile.exists()) {
+        return 'file://${cacheFile.path}';
+      }
+
+      var media = await _driveApi.files.get(
+        fileId,
+        downloadOptions: drive.DownloadOptions.fullMedia,
       );
 
-      print("File đã tải lên Drive: ${response.name}, ID: ${response.id}");
+      if (media is drive.Media) {
+        Uint8List bytes = await media.stream.fold<Uint8List>(
+          Uint8List(0),
+          (previous, element) => Uint8List.fromList([...previous, ...element]),
+        );
+
+        await cacheFile.writeAsBytes(bytes);
+        return 'file://${cacheFile.path}';
+      }
+      throw Exception('Failed to load video: Media not found');
     } catch (e) {
-      print("Lỗi khi upload file: $e");
+      throw Exception('Failed to load video to cache: $e');
     }
   }
 
