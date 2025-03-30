@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:dynamic_color/dynamic_color.dart';
-import 'package:mediaplus/screens/drive.dart';
+import 'package:mediaplus/themes/theme_data.dart';
 import 'package:mediaplus/widgets/bottom_bar.dart';
 import 'package:mediaplus/widgets/side_menu.dart';
 import 'package:mediaplus/widgets/top_bar.dart';
-import 'screens/home.dart';
-import 'themes/theme_data.dart';
+import 'package:mediaplus/screens/home.dart';
+import 'package:mediaplus/screens/drive.dart';
+import 'package:mediaplus/screens/photos.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -20,7 +21,7 @@ class AppState extends State<App> {
   final List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
     DriveScreen(),
-    Text('Hồ sơ', style: TextStyle(fontSize: 24)),
+    PhotosScreen(),
   ];
 
   void _onItemTapped(int index) {
