@@ -2,26 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class VideoSettingsProvider with ChangeNotifier {
-  bool autoPlay = false;
-  bool looping = false;
-  bool fullscreenByDefault = false;
+  late bool? _autoPlay;
+  late bool? _looping;
+  late bool? _fullscreenByDefault;
 
-  VideoSettingsProvider();
+  bool get autoPlay => _autoPlay ?? false;
+  bool get looping => _looping ?? false;
+  bool get fullscreenByDefault => _fullscreenByDefault ?? false;
+
+  set autoPlay(bool value) {
+    autoPlay = value;
+    _saveToPrefs();
+    notifyListeners();
+  }
+
+  set looping(bool value) {
+    looping = value;
+    _saveToPrefs();
+    notifyListeners();
+  }
+
+  set fullscreenByDefault(bool value) {
+    fullscreenByDefault = value;
+    _saveToPrefs();
+    notifyListeners();
+  }
 
   Future<void> init() async {
     await _loadFromPrefs();
-  }
-
-  void changeSettings({
-    bool? autoPlay,
-    bool? looping,
-    bool? fullscreenByDefault,
-  }) {
-    this.autoPlay = autoPlay ?? this.autoPlay;
-    this.looping = looping ?? this.looping;
-    this.fullscreenByDefault = fullscreenByDefault ?? this.fullscreenByDefault;
-    _saveToPrefs();
-    notifyListeners();
   }
 
   Future<void> _saveToPrefs() async {

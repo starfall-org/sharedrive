@@ -1,39 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
 import 'package:provider/provider.dart';
-import '../core/providers/video_settings.dart';
-
-class Video extends StatelessWidget {
-  final String videoUrl;
-
-  const Video({super.key, required this.videoUrl});
-
-  @override
-  Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
-          Navigator.pop(context);
-        }
-      },
-      child: Scaffold(
-        body: VideoPlayerWidget(videoUrl: videoUrl),
-        onEndDrawerChanged: (isOpened) {
-          if (!isOpened) {
-            Navigator.pop(context);
-          }
-        },
-      ),
-    );
-  }
-}
+import 'package:driveplus/core/providers/video_settings.dart';
+import 'package:driveplus/common/show_notification.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
-  final String videoUrl;
+  final File videoFile;
 
-  const VideoPlayerWidget({super.key, required this.videoUrl});
+  const VideoPlayerWidget({super.key, required this.videoFile});
 
   @override
   VideoPlayerWidgetState createState() => VideoPlayerWidgetState();
@@ -51,17 +27,15 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   }
 
   Future<void> _initializePlayer() async {
-    if (widget.videoUrl.isEmpty) {
-      debugPrint("Video URL is empty.");
+    if (widget.videoFile.path.isEmpty) {
+      showNotification(context, "Video is empty");
       return;
     }
 
     final videoSettings = context.watch<VideoSettingsProvider>();
 
     try {
-      _videoPlayerController = VideoPlayerController.networkUrl(
-        Uri.parse(widget.videoUrl),
-      );
+      _videoPlayerController = VideoPlayerController.file(widget.videoFile);
 
       await _videoPlayerController.initialize();
 
@@ -83,9 +57,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
               (context) => <OptionItem>[
                 OptionItem(
                   onTap:
-                      (_) => videoSettings.changeSettings(
-                        autoPlay: !videoSettings.autoPlay,
-                      ),
+                      (_) => videoSettings.autoPlay = !videoSettings.autoPlay,
                   iconData:
                       videoSettings.autoPlay ? Icons.autorenew : Icons.pause,
                   title:
@@ -94,10 +66,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                           : "Enable autoplay",
                 ),
                 OptionItem(
-                  onTap:
-                      (_) => videoSettings.changeSettings(
-                        looping: !videoSettings.looping,
-                      ),
+                  onTap: (_) => videoSettings.looping = !videoSettings.looping,
                   iconData:
                       videoSettings.looping ? Icons.repeat : Icons.repeat_one,
                   title:
@@ -107,9 +76,9 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                 ),
                 OptionItem(
                   onTap:
-                      (_) => videoSettings.changeSettings(
-                        fullscreenByDefault: !videoSettings.fullscreenByDefault,
-                      ),
+                      (_) =>
+                          videoSettings.fullscreenByDefault =
+                              !videoSettings.fullscreenByDefault,
                   iconData:
                       videoSettings.fullscreenByDefault
                           ? Icons.fullscreen_exit
@@ -124,7 +93,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         _isInitializing = false;
       });
     } catch (e) {
-      debugPrint("Error initializing video player: $e");
+      showNotification(context, "Failed to initialize player: $e");
       setState(() => _isInitializing = false);
     }
   }

@@ -25,7 +25,6 @@ class BottomNavBarState extends State<BottomBarWidget> {
       showUnselectedLabels: true,
       type: BottomNavigationBarType.fixed,
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
         BottomNavigationBarItem(icon: Icon(Icons.book), label: "Drive"),
         BottomNavigationBarItem(icon: Icon(Icons.collections), label: "Photos"),
       ],

@@ -5,8 +5,7 @@ import 'package:mediaplus/widgets/bottom_bar.dart';
 import 'package:mediaplus/widgets/side_menu.dart';
 import 'package:mediaplus/widgets/top_bar.dart';
 import 'package:mediaplus/screens/home.dart';
-import 'package:mediaplus/screens/drive.dart';
-import 'package:mediaplus/screens/photos.dart';
+import 'package:mediaplus/screens/share_with_me.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -18,11 +17,7 @@ class App extends StatefulWidget {
 class AppState extends State<App> {
   int _selectedIndex = 0;
 
-  final List<Widget> _widgetOptions = <Widget>[
-    HomeScreen(),
-    DriveScreen(),
-    PhotosScreen(),
-  ];
+  final List<Widget> _widgetOptions = <Widget>[HomeScreen(), ExplorerScreen()];
 
   void _onItemTapped(int index) {
     if (_selectedIndex != index) {
@@ -45,12 +40,7 @@ class AppState extends State<App> {
             child: Scaffold(
               drawer: const SideMenuWidget(),
               appBar: TopBarWidget(
-                screen:
-                    _selectedIndex == 0
-                        ? "Home"
-                        : _selectedIndex == 1
-                        ? "Drive"
-                        : "Photos",
+                screen: _selectedIndex == 0 ? "Home" : "Explorer",
               ),
               body: Center(child: _widgetOptions[_selectedIndex]),
               bottomNavigationBar: BottomBarWidget(
