@@ -1,7 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:driveplus/common/popup_login.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:googleapis_auth/googleapis_auth.dart';
-import 'package:mediaplus/core/providers/gauth_settings.dart';
-import 'package:mediaplus/core/services/googleapis_auth.dart';
+import 'package:driveplus/core/services/googleapis_auth.dart';
+import 'package:driveplus/core/providers/credentials_provider.dart';
 
 class SideMenuWidget extends StatefulWidget {
   const SideMenuWidget({super.key});
@@ -12,23 +17,13 @@ class SideMenuWidget extends StatefulWidget {
 
 class SideMenuState extends State<SideMenuWidget> {
   late Future<AuthClient> authClient;
-  late GAuthSettings settings;
+  late SelectedCredentials creds;
 
   @override
   void initState() {
     super.initState();
-    settings = GAuthSettings();
-    authClient = settings.selectedClient ?? GapisAuth.getUserAuthClient();
-  }
-
-  void _userAccountAuth() {
-    authClient = GapisAuth.getUserAuthClient();
-    settings.set(authClient);
-  }
-
-  void _serviceAccountAuth() {
+    creds = SelectedCredentials();
     authClient = GapisAuth.getServiceAccountClient();
-    settings.set(authClient);
   }
 
   @override
@@ -50,8 +45,7 @@ class SideMenuState extends State<SideMenuWidget> {
               ),
             ),
           ),
-          ListTile(title: Text('Đăng Nhập'), onTap: _userAccountAuth),
-          ListTile(title: Text('Service Account'), onTap: _serviceAccountAuth),
+          ListTile(title: Text('Đăng Nhập'), onTap: () => popupLogin(context)),
         ],
       ),
     );
