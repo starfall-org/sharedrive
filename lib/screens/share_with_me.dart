@@ -17,7 +17,7 @@ class ShareWithMeScreen extends StatefulWidget {
 
 class _ScreenState extends State<ShareWithMeScreen> {
   late GoogleDriveService _googleDriveService;
-  late AuthClient authClient;
+  late AuthClient? authClient;
   late io.File selectedFile;
   List<File> _files = [];
 

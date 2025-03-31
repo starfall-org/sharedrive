@@ -8,16 +8,16 @@ import 'package:flutter/services.dart';
 import 'package:googleapis/drive/v3.dart';
 import 'package:googleapis_auth/googleapis_auth.dart';
 
-class ShareWithMeScreen extends StatefulWidget {
-  const ShareWithMeScreen({super.key});
+class TrashedScreen extends StatefulWidget {
+  const TrashedScreen({super.key});
 
   @override
-  State<ShareWithMeScreen> createState() => _ScreenState();
+  State<TrashedScreen> createState() => _ScreenState();
 }
 
-class _ScreenState extends State<ShareWithMeScreen> {
+class _ScreenState extends State<TrashedScreen> {
   late GoogleDriveService _googleDriveService;
-  late AuthClient authClient;
+  late AuthClient? authClient;
   late io.File selectedFile;
   List<File> _files = [];
 

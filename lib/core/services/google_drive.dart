@@ -8,8 +8,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:driveplus/common/show_notification.dart';
 
 class GoogleDriveService {
-  late AuthClient _client;
-  late drive.DriveApi _driveApi;
+  late AuthClient? _client;
+  late drive.DriveApi? _driveApi;
   late BuildContext _context;
 
   List<drive.File> files = [];
@@ -21,28 +21,28 @@ class GoogleDriveService {
   List<drive.File> get getSharedWithMe => sharedWithMe;
 
   GoogleDriveService({
-    required AuthClient client,
+    required AuthClient? client,
     required BuildContext context,
   }) {
     _context = context;
     initialize(client);
   }
 
-  Future<void> initialize(AuthClient client) async {
+  Future<void> initialize(AuthClient? client) async {
     _client = client;
-    _driveApi = drive.DriveApi(client);
+    _driveApi = client == null ? null : drive.DriveApi(client);
   }
 
   Future<void> listFiles(String? folderId) async {
     try {
       if (folderId != null) {
-        drive.FileList fileList = await _driveApi.files.list(
+        drive.FileList? fileList = await _driveApi?.files.list(
           q: "'$folderId' in parents",
         );
-        files = fileList.files ?? [];
+        files = fileList?.files ?? [];
       } else {
-        drive.FileList fileList = await _driveApi.files.list();
-        files = fileList.files ?? [];
+        drive.FileList? fileList = await _driveApi?.files.list();
+        files = fileList?.files ?? [];
       }
     } catch (e) {
       showNotification(_context, 'Failed to list files: $e');
@@ -52,8 +52,10 @@ class GoogleDriveService {
 
   Future<void> listTrashedFiles() async {
     try {
-      drive.FileList fileList = await _driveApi.files.list(q: "trashed = true");
-      trashed = fileList.files ?? [];
+      drive.FileList? fileList = await _driveApi?.files.list(
+        q: "trashed = true",
+      );
+      trashed = fileList?.files ?? [];
     } catch (e) {
       showNotification(_context, 'Failed to list trashed files: $e');
       throw Exception('Failed to list trashed files: $e');
@@ -62,10 +64,10 @@ class GoogleDriveService {
 
   Future<void> listSharedWithMeFiles() async {
     try {
-      drive.FileList fileList = await _driveApi.files.list(
+      drive.FileList? fileList = await _driveApi?.files.list(
         q: "sharedWithMe = true",
       );
-      sharedWithMe = fileList.files ?? [];
+      sharedWithMe = fileList?.files ?? [];
     } catch (e) {
       showNotification(_context, 'Failed to list shared with me files: $e');
       throw Exception('Failed to list shared with me files: $e');
@@ -74,7 +76,7 @@ class GoogleDriveService {
 
   Future<io.File?> downloadFile(String fileId, String fileName) async {
     try {
-      var media = await _driveApi.files.get(
+      var media = await _driveApi?.files.get(
         fileId,
         downloadOptions: drive.DownloadOptions.fullMedia,
       );
@@ -108,10 +110,23 @@ class GoogleDriveService {
       io.File file = io.File(filePath);
       var media = drive.Media(file.openRead(), file.lengthSync());
       var driveFile = drive.File()..name = file.uri.pathSegments.last;
-      await _driveApi.files.create(driveFile, uploadMedia: media);
+      await _driveApi?.files.create(driveFile, uploadMedia: media);
     } catch (e) {
       showNotification(_context, 'Failed to upload file: $e');
       throw Exception('Failed to upload file: $e');
+    }
+  }
+
+  Future<void> createFolder(String folderName) async {
+    try {
+      var driveFile =
+          drive.File()
+            ..name = folderName
+            ..mimeType = 'application/vnd.google-apps.folder';
+      await _driveApi?.files.create(driveFile);
+    } catch (e) {
+      showNotification(_context, 'Failed to create folder: $e');
+      throw Exception('Failed to create folder: $e');
     }
   }
 
@@ -125,7 +140,7 @@ class GoogleDriveService {
         return cacheFile;
       }
 
-      var media = await _driveApi.files.get(
+      var media = await _driveApi?.files.get(
         fileId,
         downloadOptions: drive.DownloadOptions.fullMedia,
       );
@@ -148,6 +163,6 @@ class GoogleDriveService {
   }
 
   void close() {
-    _client.close();
+    _client?.close();
   }
 }

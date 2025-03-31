@@ -12,49 +12,54 @@ void popupLogin(BuildContext context) {
     builder: (context) {
       return AlertDialog(
         title: Text('Đăng Nhập'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: credController,
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText: 'Nhập hoặc chọn file JSON',
-                border: OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: 300),
+                child: TextField(
+                  controller: credController,
+                  maxLines: null,
+                  decoration: InputDecoration(
+                    hintText: 'Nhập hoặc chọn file JSON',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
               ),
-            ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  final result = await FilePicker.platform.pickFiles(
-                    type: FileType.custom,
-                    allowedExtensions: ['json'],
-                  );
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    final result = await FilePicker.platform.pickFiles(
+                      type: FileType.custom,
+                      allowedExtensions: ['json'],
+                    );
 
-                  if (result != null) {
-                    final file = File(result.files.single.path!);
-                    final content = await file.readAsString();
+                    if (result != null) {
+                      final file = File(result.files.single.path!);
+                      final content = await file.readAsString();
 
-                    if (_isValidJson(content)) {
-                      credController.text = content;
-                    } else {
-                      _showErrorDialog(
-                        context,
-                        'File JSON không hợp lệ hoặc thiếu khóa "client_email".',
-                      );
+                      if (_isValidJson(content)) {
+                        credController.text = content;
+                      } else {
+                        _showErrorDialog(
+                          context,
+                          'File JSON không hợp lệ hoặc thiếu khóa "client_email".',
+                        );
+                      }
                     }
+                  } catch (e) {
+                    _showErrorDialog(
+                      context,
+                      'Lỗi khi đọc file: ${e.toString()}',
+                    );
                   }
-                } catch (e) {
-                  _showErrorDialog(
-                    context,
-                    'Lỗi khi đọc file: ${e.toString()}',
-                  );
-                }
-              },
-              child: Text('Chọn file JSON'),
-            ),
-          ],
+                },
+                child: Text('Chọn file JSON'),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(

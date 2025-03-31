@@ -67,7 +67,7 @@ class AppState extends State<App> {
 
           home: SafeArea(
             child: Scaffold(
-              drawer: const SideMenuWidget(),
+              drawer: SideMenu(),
               appBar: TopBarWidget(
                 screen: _selectedIndex == 0 ? "Files" : "Share with me",
               ),

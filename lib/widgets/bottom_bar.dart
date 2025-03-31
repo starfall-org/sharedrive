@@ -25,8 +25,11 @@ class BottomNavBarState extends State<BottomBarWidget> {
       showUnselectedLabels: true,
       type: BottomNavigationBarType.fixed,
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.book), label: "Drive"),
-        BottomNavigationBarItem(icon: Icon(Icons.collections), label: "Photos"),
+        BottomNavigationBarItem(icon: Icon(Icons.book), label: "Files"),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.share_rounded),
+          label: "Shared",
+        ),
       ],
     );
   }
