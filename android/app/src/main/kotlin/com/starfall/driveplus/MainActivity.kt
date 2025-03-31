@@ -1,4 +1,4 @@
-package com.example.mediaplus
+package com.starfall.driveplus
 
 import io.flutter.embedding.android.FlutterActivity
 
