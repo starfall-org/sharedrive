@@ -3,7 +3,6 @@ import 'package:driveplus/core/services/googleapis_auth.dart';
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:driveplus/common/popup_login.dart';
 import 'package:driveplus/core/providers/credentials_provider.dart';
-import 'package:driveplus/screens/trashed_screen.dart';
 
 class SideMenu extends StatefulWidget {
   @override
@@ -71,16 +70,6 @@ class _SideMenuState extends State<SideMenu> {
             title: Text("Add Service Account"),
             onTap: () {
               popupLogin(context);
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.delete),
-            title: Text("Trashed"),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => TrashedScreen()),
-              );
             },
           ),
         ],
