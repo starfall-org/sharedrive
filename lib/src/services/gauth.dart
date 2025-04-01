@@ -1,11 +1,38 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:driveplus/core/providers/credentials_provider.dart';
 
-class GapisAuth {
-  static const String _scopes = 'https://www.googleapis.com/auth/drive';
+class GAuthService {
+  final String _scopes = 'https://www.googleapis.com/auth/drive';
+  late ServiceAccountCredentials? _credentials;
+
+  GAuthService(String clientEmail) {
+    _loadCredentials(clientEmail);
+  }
+
+  Future<void> _loadCredentials(String clientEmail) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final filePath = '${dir.path}/credentials/$clientEmail.json';
+    final file = File(filePath);
+
+    if (!await file.exists()) {
+      throw Exception("Credentials không tồn tại cho tài khoản: $clientEmail.");
+    }
+
+    try {
+      final jsonStr = await file.readAsString();
+      final data = jsonDecode(jsonStr);
+      _credentials = ServiceAccountCredentials.fromJson(data);
+    } catch (e) {
+      throw Exception("Không thể đọc credentials từ tệp: $filePath");
+    }
+  }
+
+  Future<void> changeCredentials(String clientEmail) async {
+    await _loadCredentials(clientEmail);
+  }
 
   static Future<void> saveCredentials(String credStr) async {
     final credJson = jsonDecode(credStr);
@@ -32,35 +59,6 @@ class GapisAuth {
     await file.writeAsString(credStr);
   }
 
-  static Future<ServiceAccountCredentials?> loadCredentials() async {
-    SelectedCredentials selectedCredentials = SelectedCredentials();
-    String? clientEmail = selectedCredentials.clientEmail;
-
-    if (clientEmail == null) {
-      var allCredentials = await listCredentials();
-      if (allCredentials.isEmpty) {
-        return null;
-      }
-      clientEmail = allCredentials.first;
-    }
-
-    final dir = await getApplicationDocumentsDirectory();
-    final filePath = '${dir.path}/credentials/$clientEmail.json';
-    final file = File(filePath);
-
-    if (!await file.exists()) {
-      return null;
-    }
-
-    try {
-      final jsonStr = await file.readAsString();
-      final data = jsonDecode(jsonStr);
-      return ServiceAccountCredentials.fromJson(data);
-    } catch (e) {
-      return null;
-    }
-  }
-
   static Future<String?> deleteCredentials(String clientEmail) async {
     final dir = await getApplicationDocumentsDirectory();
     final file = File('${dir.path}/credentials/$clientEmail.json');
@@ -69,7 +67,7 @@ class GapisAuth {
     return clientEmail;
   }
 
-  static Future<List<String>> listCredentials() async {
+  static Future<List<String>> savedCredentialsList() async {
     final dir = await getApplicationDocumentsDirectory();
     final accountsDir = Directory('${dir.path}/credentials');
 
@@ -83,9 +81,9 @@ class GapisAuth {
         .toList();
   }
 
-  static Future<AuthClient?> getServiceAccountClient() async {
-    final credentials = await loadCredentials();
-    if (credentials == null) return null;
-    return await clientViaServiceAccount(credentials, [_scopes]);
+  Future<AuthClient?> getServiceAccountClient() async {
+    return _credentials == null
+        ? null
+        : await clientViaServiceAccount(_credentials!, [_scopes]);
   }
 }

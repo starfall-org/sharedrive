@@ -1,76 +1,59 @@
 import 'dart:typed_data';
 import 'dart:io' as io;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis_auth/googleapis_auth.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:driveplus/common/show_notification.dart';
 
-class GoogleDriveService {
-  late AuthClient? _client;
+import '../common/notification.dart';
+
+class GDriveService {
+  late AuthClient? _authClient;
   late drive.DriveApi? _driveApi;
   late BuildContext _context;
 
-  List<drive.File> files = [];
-  List<drive.File> trashed = [];
-  List<drive.File> sharedWithMe = [];
-
-  List<drive.File> get getFiles => files;
-  List<drive.File> get getTrashed => trashed;
-  List<drive.File> get getSharedWithMe => sharedWithMe;
-
-  GoogleDriveService({
-    required AuthClient? client,
-    required BuildContext context,
-  }) {
+  GDriveService({required AuthClient? client, required BuildContext context}) {
     _context = context;
     initialize(client);
   }
 
+  List<drive.File> _files = [];
+  List<drive.File> get files => _files;
+
   Future<void> initialize(AuthClient? client) async {
-    _client = client;
+    _authClient = client;
     _driveApi = client == null ? null : drive.DriveApi(client);
   }
 
-  Future<void> listFiles(String? folderId) async {
+  Future<void> listFiles({
+    String? folderId,
+    bool sharedWithMe = false,
+    bool trashed = false,
+  }) async {
     try {
+      List<String> conditions = [];
+
       if (folderId != null) {
-        drive.FileList? fileList = await _driveApi?.files.list(
-          q: "'$folderId' in parents",
-        );
-        files = fileList?.files ?? [];
-      } else {
-        drive.FileList? fileList = await _driveApi?.files.list();
-        files = fileList?.files ?? [];
+        conditions.add("'$folderId' in parents");
       }
+
+      if (sharedWithMe) {
+        conditions.add("sharedWithMe = true");
+      }
+
+      conditions.add("trashed = $trashed");
+
+      String query = conditions.join(" and ");
+
+      drive.FileList? fileList = await _driveApi?.files.list(
+        q: query.isNotEmpty ? query : null,
+      );
+
+      _files = fileList?.files ?? [];
     } catch (e) {
-      showNotification(_context, 'Failed to list files: $e');
       throw Exception('Failed to list files: $e');
-    }
-  }
-
-  Future<void> listTrashedFiles() async {
-    try {
-      drive.FileList? fileList = await _driveApi?.files.list(
-        q: "trashed = true",
-      );
-      trashed = fileList?.files ?? [];
-    } catch (e) {
-      showNotification(_context, 'Failed to list trashed files: $e');
-      throw Exception('Failed to list trashed files: $e');
-    }
-  }
-
-  Future<void> listSharedWithMeFiles() async {
-    try {
-      drive.FileList? fileList = await _driveApi?.files.list(
-        q: "sharedWithMe = true",
-      );
-      sharedWithMe = fileList?.files ?? [];
-    } catch (e) {
-      showNotification(_context, 'Failed to list shared with me files: $e');
-      throw Exception('Failed to list shared with me files: $e');
     }
   }
 
@@ -80,7 +63,6 @@ class GoogleDriveService {
         fileId,
         downloadOptions: drive.DownloadOptions.fullMedia,
       );
-
       if (media is drive.Media) {
         Uint8List bytes = await media.stream.fold<Uint8List>(
           Uint8List(0),
@@ -92,15 +74,13 @@ class GoogleDriveService {
             await getApplicationDocumentsDirectory();
         String savePath = '${directory.path}/$fileName';
         io.File file = io.File(savePath);
-        showProgressNotification(_context, fileName, 0 / 0);
         await file.writeAsBytes(bytes);
-
+        showNotification(_context, 'Downloaded file: $fileName');
         return file;
       }
 
       return null;
     } catch (e) {
-      showNotification(_context, 'Failed to download file: $e');
       throw Exception('Failed to download file: $e');
     }
   }
@@ -112,7 +92,6 @@ class GoogleDriveService {
       var driveFile = drive.File()..name = file.uri.pathSegments.last;
       await _driveApi?.files.create(driveFile, uploadMedia: media);
     } catch (e) {
-      showNotification(_context, 'Failed to upload file: $e');
       throw Exception('Failed to upload file: $e');
     }
   }
@@ -125,7 +104,6 @@ class GoogleDriveService {
             ..mimeType = 'application/vnd.google-apps.folder';
       await _driveApi?.files.create(driveFile);
     } catch (e) {
-      showNotification(_context, 'Failed to create folder: $e');
       throw Exception('Failed to create folder: $e');
     }
   }
@@ -154,15 +132,14 @@ class GoogleDriveService {
         await cacheFile.writeAsBytes(bytes);
         return cacheFile;
       }
-      showNotification(_context, 'Failed to load video: Media not found');
+
       throw Exception('Failed to load video: Media not found');
     } catch (e) {
-      showNotification(_context, 'Failed to load video to cache: $e');
       throw Exception('Failed to load video to cache: $e');
     }
   }
 
   void close() {
-    _client?.close();
+    _authClient?.close();
   }
 }
