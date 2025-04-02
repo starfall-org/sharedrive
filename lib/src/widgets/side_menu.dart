@@ -1,32 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:driveplus/core/services/googleapis_auth.dart';
 import 'package:googleapis_auth/auth_io.dart';
-import 'package:driveplus/common/popup_login.dart';
-import 'package:driveplus/core/providers/credentials_provider.dart';
+
+import '../services/gauth.dart';
+import '../widgets/dialogs/login.dart';
+import '../settings/credentials.dart';
 
 class SideMenu extends StatefulWidget {
+  const SideMenu({super.key});
   @override
-  _SideMenuState createState() => _SideMenuState();
+  SideMenuState createState() => SideMenuState();
 }
 
-class _SideMenuState extends State<SideMenu> {
-  Future<AuthClient?>? _authClientFuture;
-  final SelectedCredentials _selectedCredentials = SelectedCredentials();
-
+class SideMenuState extends State<SideMenu> {
+  late CredentialsSettings _credentialsSettings;
+  late GAuthService _gauth;
+  AuthClient? _authClient;
   List<String> _accountsEmails = [];
 
   @override
   void initState() {
     super.initState();
-    _loadCredentials();
+    _loadServices();
   }
 
-  Future<void> _loadCredentials() async {
-    _authClientFuture = GapisAuth.getServiceAccountClient();
-    _accountsEmails = await GapisAuth.listCredentials();
-    if (_selectedCredentials.clientEmail == null &&
+  Future<void> _loadServices() async {
+    _credentialsSettings = CredentialsSettings();
+    _gauth = GAuthService(_credentialsSettings.clientEmail);
+    _authClient = await _gauth.getServiceAccountClient();
+    _accountsEmails = await GAuthService.savedCredentialsList();
+    if (_credentialsSettings.clientEmail == null &&
         _accountsEmails.isNotEmpty) {
-      _selectedCredentials.clientEmail = _accountsEmails.first;
+      _credentialsSettings.clientEmail = _accountsEmails.first;
     }
 
     setState(() {});
@@ -35,9 +39,9 @@ class _SideMenuState extends State<SideMenu> {
   void _onAccountSelected(String? email) async {
     if (email == null) return;
     setState(() {
-      _selectedCredentials.clientEmail = email;
+      _credentialsSettings.clientEmail = email;
     });
-    _authClientFuture = GapisAuth.getServiceAccountClient();
+    _authClient = await _gauth.getServiceAccountClient();
 
     setState(() {});
   }
@@ -50,7 +54,7 @@ class _SideMenuState extends State<SideMenu> {
           UserAccountsDrawerHeader(
             accountName: Text("Service Account"),
             accountEmail: DropdownButton<String>(
-              value: _selectedCredentials.clientEmail,
+              value: _credentialsSettings.clientEmail,
               items:
                   _accountsEmails
                       .map(

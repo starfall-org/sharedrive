@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 
-Future<void> checkAndRequestPermissions() async {
+Future<void> requestPermissions() async {
   if (Platform.isAndroid) {
     if (await Permission.notification.isDenied &&
         Platform.version.startsWith('13')) {

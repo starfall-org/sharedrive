@@ -1,10 +1,12 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
 import 'package:provider/provider.dart';
-import 'package:driveplus/core/providers/video_settings.dart';
-import 'package:driveplus/common/show_notification.dart';
+
+import '../../settings/video.dart';
+import '../../common/notification.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
   final File videoFile;
@@ -28,11 +30,11 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
   Future<void> _initializePlayer() async {
     if (widget.videoFile.path.isEmpty) {
-      showNotification(context, "Video is empty");
+      postNotification(context, "Video is empty");
       return;
     }
 
-    final videoSettings = context.watch<VideoSettingsProvider>();
+    final videoSettings = context.watch<VideoSettings>();
 
     try {
       _videoPlayerController = VideoPlayerController.file(widget.videoFile);
@@ -93,7 +95,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         _isInitializing = false;
       });
     } catch (e) {
-      showNotification(context, "Failed to initialize player: $e");
+      postNotification(context, "Failed to initialize player: $e");
       setState(() => _isInitializing = false);
     }
   }

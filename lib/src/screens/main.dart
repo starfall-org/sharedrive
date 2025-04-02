@@ -1,20 +1,30 @@
-import 'dart:io' as io;
 import 'package:flutter/material.dart';
 import 'package:googleapis/drive/v3.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:driveplus/core/services/google_drive.dart';
-import 'package:driveplus/core/services/googleapis_auth.dart';
 import 'package:googleapis_auth/googleapis_auth.dart';
 
-class FilesScreen extends StatefulWidget {
-  const FilesScreen({super.key});
+import '../services/gauth.dart';
+import '../services/gdrive.dart';
+import '../settings/credentials.dart';
+
+class MainScreen extends StatefulWidget {
+  final String? folderId;
+  final bool isSharedWithMe;
+  final bool isTrashed;
+
+  const MainScreen({
+    super.key,
+    this.folderId,
+    this.isSharedWithMe = false,
+    this.isTrashed = false,
+  });
 
   @override
-  State<FilesScreen> createState() => _FilesScreenState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class _FilesScreenState extends State<FilesScreen> {
-  GoogleDriveService? _googleDriveService;
+class _MainScreenState extends State<MainScreen> {
+  GDriveService? _googleDriveService;
   AuthClient? authClient;
   List<File> _files = [];
 
@@ -22,6 +32,11 @@ class _FilesScreenState extends State<FilesScreen> {
   void initState() {
     super.initState();
     _initAuthClient();
+    _loadFilesList(
+      folderId: widget.folderId,
+      sharedWithMe: widget.isSharedWithMe,
+      trashed: widget.isTrashed,
+    );
   }
 
   @override
@@ -31,22 +46,34 @@ class _FilesScreenState extends State<FilesScreen> {
   }
 
   Future<void> _initAuthClient() async {
-    authClient = await GapisAuth.getServiceAccountClient();
+    CredentialsSettings credentialsSettings = CredentialsSettings();
+    String? selectedClientEmail = credentialsSettings.clientEmail;
+    GAuthService gauth = GAuthService(selectedClientEmail);
+    authClient = await gauth.getServiceAccountClient();
     if (authClient != null) {
-      _googleDriveService = GoogleDriveService(
+      _googleDriveService = GDriveService(
         client: authClient!,
         context: context,
       );
-      await _loadFilesList();
     }
   }
 
-  Future<void> _loadFilesList() async {
-    if (_googleDriveService == null) return;
-    await _googleDriveService!.listFiles(null);
-    setState(() {
-      _files = _googleDriveService!.files;
-    });
+  Future<void> _loadFilesList({
+    String? folderId,
+    bool sharedWithMe = false,
+    bool trashed = false,
+  }) async {
+    if (_googleDriveService != null) {
+      await _googleDriveService!.listFiles(
+        folderId: folderId,
+        sharedWithMe: sharedWithMe,
+        trashed: trashed,
+      );
+
+      setState(() {
+        _files = _googleDriveService!.files;
+      });
+    }
   }
 
   Future<void> _uploadFile() async {
@@ -113,7 +140,7 @@ class _FilesScreenState extends State<FilesScreen> {
       title: Text(file.name ?? 'Unnamed directory'),
       subtitle: Text(file.mimeType ?? 'Unknown type'),
       onTap: () async {
-        await _googleDriveService?.listFiles(file.id);
+        await _googleDriveService?.listFiles(folderId: file.id);
         await _loadFilesList();
       },
     );

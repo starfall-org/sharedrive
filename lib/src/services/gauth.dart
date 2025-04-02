@@ -8,15 +8,22 @@ class GAuthService {
   final String _scopes = 'https://www.googleapis.com/auth/drive';
   late ServiceAccountCredentials? _credentials;
 
-  GAuthService(String clientEmail) {
+  GAuthService(String? clientEmail) {
     _loadCredentials(clientEmail);
   }
 
-  Future<void> _loadCredentials(String clientEmail) async {
-    final dir = await getApplicationDocumentsDirectory();
-    final filePath = '${dir.path}/credentials/$clientEmail.json';
-    final file = File(filePath);
+  Future<void> _loadCredentials(String? clientEmail) async {
+    String filePath;
+    if (clientEmail != null) {
+      final dir = await getApplicationDocumentsDirectory();
+      filePath = '${dir.path}/credentials/$clientEmail.json';
+    } else {
+      List credentialsList = await savedCredentialsList();
+      final dir = await getApplicationDocumentsDirectory();
+      filePath = '${dir.path}/credentials/${credentialsList[0]}.json';
+    }
 
+    final file = File(filePath);
     if (!await file.exists()) {
       throw Exception("Credentials không tồn tại cho tài khoản: $clientEmail.");
     }

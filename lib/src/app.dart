@@ -4,9 +4,9 @@ import 'package:dynamic_color/dynamic_color.dart';
 import './common/themes/material.dart';
 import './screens/main.dart';
 import './widgets/dialogs/login.dart';
-import './widgets/appbars/bottom.dart';
+import 'widgets/navbars/bottom.dart';
 import './widgets/side_menu.dart';
-import './widgets/appbars/top.dart';
+import 'widgets/navbars/top.dart';
 import './services/gauth.dart';
 
 class App extends StatefulWidget {
@@ -20,11 +20,6 @@ class AppState extends State<App> {
   int _selectedIndex = 0;
   List<String> accounts = [];
 
-  final List<Widget> _widgetOptions = <Widget>[
-    const FilesScreen(),
-    const ShareWithMeScreen(),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -32,14 +27,14 @@ class AppState extends State<App> {
   }
 
   Future<void> _loadAccounts() async {
-    var tempAccountsList = await GapisAuth.listCredentials();
+    var tempAccountsList = await GAuthService.savedCredentialsList();
     if (tempAccountsList.isNotEmpty) {
       setState(() {
         accounts = tempAccountsList;
       });
     } else {
       popupLogin(context);
-      var newAccountsList = await GapisAuth.listCredentials();
+      var newAccountsList = await GAuthService.savedCredentialsList();
       if (newAccountsList.isNotEmpty) {
         setState(() {
           accounts = newAccountsList;
@@ -71,7 +66,7 @@ class AppState extends State<App> {
               appBar: TopBarWidget(
                 screen: _selectedIndex == 0 ? "Files" : "Share with me",
               ),
-              body: Center(child: _widgetOptions[_selectedIndex]),
+              body: Center(child: MainScreen()),
               bottomNavigationBar: BottomBarWidget(
                 selectedIndex: _selectedIndex,
                 onItemTapped: _onItemTapped,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-void showNotification(BuildContext context, String message) {
+void postNotification(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(message),
@@ -12,7 +12,7 @@ void showNotification(BuildContext context, String message) {
   );
 }
 
-void showProgressNotification(
+void postProgressNotification(
   BuildContext context,
   String message,
   double progress,

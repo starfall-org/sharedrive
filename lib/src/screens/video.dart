@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:driveplus/widgets/video_player.dart';
+
+import '../widgets/media/video.dart';
 
 class Video extends StatefulWidget {
   final File videoFile;

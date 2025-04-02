@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class VideoSettingsProvider with ChangeNotifier {
+class VideoSettings with ChangeNotifier {
   late bool _autoPlay;
   late bool _looping;
   late bool _fullscreenByDefault;
 
-  VideoSettingsProvider() {
+  VideoSettings() {
     _autoPlay = false;
     _looping = false;
     _fullscreenByDefault = false;
