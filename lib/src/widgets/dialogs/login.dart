@@ -74,7 +74,11 @@ void popupLogin(BuildContext context) {
             onPressed: () {
               if (_isValidJson(credController.text)) {
                 Navigator.of(context).pop();
-                GAuthService.saveCredentials(credController.text);
+                try {
+                  GAuthService.saveCredentials(credController.text);
+                } catch (e) {
+                  _showErrorDialog(context, e.toString());
+                }
               } else {
                 _showErrorDialog(
                   context,
@@ -88,11 +92,10 @@ void popupLogin(BuildContext context) {
       );
     },
   ).then((_) {
-    credController.dispose(); // Giải phóng bộ nhớ khi hộp thoại đóng
+    credController.dispose();
   });
 }
 
-/// Kiểm tra xem nội dung có phải là JSON hợp lệ và chứa khóa "client_email" không
 bool _isValidJson(String content) {
   try {
     final data = jsonDecode(content);
@@ -102,7 +105,6 @@ bool _isValidJson(String content) {
   }
 }
 
-/// Hiển thị hộp thoại lỗi
 void _showErrorDialog(BuildContext context, String message) {
   showDialog(
     context: context,
