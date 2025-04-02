@@ -46,7 +46,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _initAuthClient() async {
-    CredentialsSettings credentialsSettings = CredentialsSettings();
+    CredentialsNotifier credentialsSettings = CredentialsNotifier();
     String? selectedClientEmail = credentialsSettings.clientEmail;
     GAuthService gauth = GAuthService(selectedClientEmail);
     authClient = await gauth.getServiceAccountClient();

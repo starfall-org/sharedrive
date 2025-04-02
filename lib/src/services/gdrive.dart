@@ -75,7 +75,7 @@ class GDriveService {
         String savePath = '${directory.path}/$fileName';
         io.File file = io.File(savePath);
         await file.writeAsBytes(bytes);
-        showNotification(_context, 'Downloaded file: $fileName');
+        postNotification(_context, 'Downloaded file: $fileName');
         return file;
       }
 

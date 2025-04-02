@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class CredentialsSettings extends ChangeNotifier {
+class CredentialsNotifier extends ChangeNotifier {
   String? _clientEmail;
 
   String? get clientEmail => _clientEmail;
 
-  CredentialsSettings() {
+  CredentialsNotifier() {
     _loadFromPrefs();
   }
 

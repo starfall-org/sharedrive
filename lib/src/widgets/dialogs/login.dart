@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:driveplus/core/services/googleapis_auth.dart';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+
+import '../../services/gauth.dart';
 
 void popupLogin(BuildContext context) {
   TextEditingController credController = TextEditingController();
@@ -72,7 +74,7 @@ void popupLogin(BuildContext context) {
             onPressed: () {
               if (_isValidJson(credController.text)) {
                 Navigator.of(context).pop();
-                GapisAuth.saveCredentials(credController.text);
+                GAuthService.saveCredentials(credController.text);
               } else {
                 _showErrorDialog(
                   context,

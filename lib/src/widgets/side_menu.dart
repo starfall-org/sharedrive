@@ -12,7 +12,7 @@ class SideMenu extends StatefulWidget {
 }
 
 class SideMenuState extends State<SideMenu> {
-  late CredentialsSettings _credentialsSettings;
+  late CredentialsNotifier _credentialsSettings;
   late GAuthService _gauth;
   AuthClient? _authClient;
   List<String> _accountsEmails = [];
@@ -24,7 +24,7 @@ class SideMenuState extends State<SideMenu> {
   }
 
   Future<void> _loadServices() async {
-    _credentialsSettings = CredentialsSettings();
+    _credentialsSettings = CredentialsNotifier();
     _gauth = GAuthService(_credentialsSettings.clientEmail);
     _authClient = await _gauth.getServiceAccountClient();
     _accountsEmails = await GAuthService.savedCredentialsList();

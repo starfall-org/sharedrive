@@ -34,7 +34,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       return;
     }
 
-    final videoSettings = context.watch<VideoSettings>();
+    final videoSettings = context.watch<VideoSettingsNotifier>();
 
     try {
       _videoPlayerController = VideoPlayerController.file(widget.videoFile);
