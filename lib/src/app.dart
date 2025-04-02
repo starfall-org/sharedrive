@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 
@@ -26,6 +28,11 @@ class AppState extends State<App> {
     _loadAccounts();
   }
 
+  void _onLogin(String creds) async {
+    await GAuthService.saveCredentials(creds);
+    _loadAccounts();
+  }
+
   Future<void> _loadAccounts() async {
     var tempAccountsList = await GAuthService.savedCredentialsList();
     if (tempAccountsList.isNotEmpty) {
@@ -33,7 +40,7 @@ class AppState extends State<App> {
         accounts = tempAccountsList;
       });
     } else {
-      popupLogin(context);
+      popupLogin(context, _onLogin);
       var newAccountsList = await GAuthService.savedCredentialsList();
       if (newAccountsList.isNotEmpty) {
         setState(() {

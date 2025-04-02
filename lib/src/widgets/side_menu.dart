@@ -24,16 +24,26 @@ class SideMenuState extends State<SideMenu> {
   }
 
   Future<void> _loadServices() async {
-    _credentialsSettings = CredentialsNotifier();
-    _gauth = GAuthService(_credentialsSettings.clientEmail);
-    _authClient = await _gauth.getServiceAccountClient();
-    _accountsEmails = await GAuthService.savedCredentialsList();
+    setState(() {
+      _credentialsSettings = CredentialsNotifier();
+      _gauth = GAuthService(_credentialsSettings.clientEmail);
+    });
+    AuthClient? tempAuthClient = await _gauth.getServiceAccountClient();
+    setState(() {
+      _authClient = tempAuthClient;
+    });
+    _loadAccounts();
     if (_credentialsSettings.clientEmail == null &&
         _accountsEmails.isNotEmpty) {
       _credentialsSettings.clientEmail = _accountsEmails.first;
     }
+  }
 
-    setState(() {});
+  void _loadAccounts() async {
+    List<String> tempAccountsList = await GAuthService.savedCredentialsList();
+    setState(() {
+      _accountsEmails = tempAccountsList;
+    });
   }
 
   void _onAccountSelected(String? email) async {
@@ -44,6 +54,11 @@ class SideMenuState extends State<SideMenu> {
     _authClient = await _gauth.getServiceAccountClient();
 
     setState(() {});
+  }
+
+  void _onLogin(String credStr) async {
+    await GAuthService.saveCredentials(credStr);
+    await _loadServices();
   }
 
   @override
@@ -73,7 +88,7 @@ class SideMenuState extends State<SideMenu> {
             leading: Icon(Icons.logout),
             title: Text("Add Service Account"),
             onTap: () {
-              popupLogin(context);
+              popupLogin(context, _onLogin);
             },
           ),
         ],
