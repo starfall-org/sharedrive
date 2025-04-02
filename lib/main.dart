@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -138,4 +139,29 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       ),
     );
   }
+=======
+import 'package:provider/provider.dart';
+
+import 'src/app.dart';
+import 'src/settings/credentials.dart';
+import 'src/settings/video.dart';
+import 'src/common/permissions.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  checkAndRequestPermissions();
+  final videoSettingsProvider = VideoSettingsProvider();
+  await videoSettingsProvider.init();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => VideoSettingsNotifier()),
+        ChangeNotifierProvider(create: (_) => CredentialsNotifier()),
+      ],
+      child: const App(),
+    ),
+  );
+>>>>>>> 2edc21a27587656410baae26ff3c3e24e0453548
 }
