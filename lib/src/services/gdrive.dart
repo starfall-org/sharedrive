@@ -12,21 +12,16 @@ import '../common/notification.dart';
 import '../models/app_model.dart';
 
 class GDriveService {
-  late AuthClient? _authClient;
-  late drive.DriveApi? _driveApi;
-  late BuildContext _context;
+  late BuildContext context;
+  late AuthClient authClient;
+  late drive.DriveApi _driveApi;
 
-  GDriveService({required AuthClient? client, required BuildContext context}) {
-    _context = context;
-    initialize(client);
+  GDriveService({required this.context, required this.authClient}) {
+    initialize();
   }
 
-  List<drive.File> _files = [];
-  List<drive.File> get files => _files;
-
-  Future<void> initialize(AuthClient? client) async {
-    _authClient = client;
-    _driveApi = client == null ? null : drive.DriveApi(client);
+  Future<void> initialize() async {
+    _driveApi = drive.DriveApi(authClient);
   }
 
   Future<void> listFiles({
@@ -49,12 +44,11 @@ class GDriveService {
 
       String query = conditions.join(" and ");
 
-      drive.FileList? fileList = await _driveApi?.files.list(
+      drive.FileList fileList = await _driveApi.files.list(
         q: query.isNotEmpty ? query : null,
       );
 
-      _files = fileList?.files ?? [];
-      _context.read<AppModel>().files = _files;
+      context.read<AppModel>().files = fileList.files;
     } catch (e) {
       throw Exception('Failed to list files: $e');
     }
@@ -62,7 +56,7 @@ class GDriveService {
 
   Future<io.File?> downloadFile(String fileId, String fileName) async {
     try {
-      var media = await _driveApi?.files.get(
+      var media = await _driveApi.files.get(
         fileId,
         downloadOptions: drive.DownloadOptions.fullMedia,
       );
@@ -78,7 +72,7 @@ class GDriveService {
         String savePath = '${directory.path}/$fileName';
         io.File file = io.File(savePath);
         await file.writeAsBytes(bytes);
-        postNotification(_context, 'Downloaded file: $fileName');
+        postNotification(context, 'Downloaded file: $fileName');
         return file;
       }
 
@@ -93,7 +87,7 @@ class GDriveService {
       io.File file = io.File(filePath);
       var media = drive.Media(file.openRead(), file.lengthSync());
       var driveFile = drive.File()..name = file.uri.pathSegments.last;
-      await _driveApi?.files.create(driveFile, uploadMedia: media);
+      await _driveApi.files.create(driveFile, uploadMedia: media);
     } catch (e) {
       throw Exception('Failed to upload file: $e');
     }
@@ -105,7 +99,7 @@ class GDriveService {
           drive.File()
             ..name = folderName
             ..mimeType = 'application/vnd.google-apps.folder';
-      await _driveApi?.files.create(driveFile);
+      await _driveApi.files.create(driveFile);
     } catch (e) {
       throw Exception('Failed to create folder: $e');
     }
@@ -121,7 +115,7 @@ class GDriveService {
         return cacheFile;
       }
 
-      var media = await _driveApi?.files.get(
+      var media = await _driveApi.files.get(
         fileId,
         downloadOptions: drive.DownloadOptions.fullMedia,
       );
@@ -140,9 +134,5 @@ class GDriveService {
     } catch (e) {
       throw Exception('Failed to load video to cache: $e');
     }
-  }
-
-  void close() {
-    _authClient?.close();
   }
 }

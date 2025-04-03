@@ -3,10 +3,12 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../models/app_model.dart';
 import '../../services/gauth.dart';
 
-void popupLogin(BuildContext context) {
+void showLoginDialog(BuildContext context) {
   TextEditingController credController = TextEditingController();
 
   showDialog(
@@ -76,13 +78,16 @@ void popupLogin(BuildContext context) {
                 Navigator.of(context).pop();
                 try {
                   GAuthService.saveCredentials(credController.text);
+                  var credJson = jsonDecode(credController.text);
+                  var clientEmail = credJson['client_email'];
+                  context.read<AppModel>().selectedClientEmail = clientEmail;
                 } catch (e) {
                   _showErrorDialog(context, e.toString());
                 }
               } else {
                 _showErrorDialog(
                   context,
-                  'Nội dung không phải JSON hợp lệ hoặc thiếu khóa "client_email".',
+                  'The JSON file is not valid or does not contain "client_email".',
                 );
               }
             },

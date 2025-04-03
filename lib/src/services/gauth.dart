@@ -7,18 +7,26 @@ import 'package:path_provider/path_provider.dart';
 class GAuthService {
   final String _scopes = 'https://www.googleapis.com/auth/drive';
   late ServiceAccountCredentials? _credentials;
+  late AuthClient _client;
 
   GAuthService(String? clientEmail) {
-    _loadCredentials(clientEmail);
+    loadCredentials(clientEmail);
+    _loadAuthClient();
   }
 
-  Future<void> _loadCredentials(String? clientEmail) async {
+  get client => _client;
+
+  Future<void> _loadAuthClient() async {
+    _client = await clientViaServiceAccount(_credentials!, [_scopes]);
+  }
+
+  Future<void> loadCredentials(String? clientEmail) async {
     String filePath;
     if (clientEmail != null) {
       final dir = await getApplicationDocumentsDirectory();
       filePath = '${dir.path}/credentials/$clientEmail.json';
     } else {
-      List credentialsList = await savedCredentialsList();
+      List credentialsList = await listSavedCredentials();
       final dir = await getApplicationDocumentsDirectory();
       filePath = '${dir.path}/credentials/${credentialsList[0]}.json';
     }
@@ -35,10 +43,6 @@ class GAuthService {
     } catch (e) {
       throw Exception("Không thể đọc credentials từ tệp: $filePath");
     }
-  }
-
-  Future<void> changeCredentials(String clientEmail) async {
-    await _loadCredentials(clientEmail);
   }
 
   static Future<void> saveCredentials(String credStr) async {
@@ -74,7 +78,7 @@ class GAuthService {
     return clientEmail;
   }
 
-  static Future<List<String>> savedCredentialsList() async {
+  static Future<List<String>> listSavedCredentials() async {
     final dir = await getApplicationDocumentsDirectory();
     final accountsDir = Directory('${dir.path}/credentials');
 
@@ -86,11 +90,5 @@ class GAuthService {
         .where((f) => f is File && f.path.endsWith('.json'))
         .map((f) => f.uri.pathSegments.last.replaceAll('.json', ''))
         .toList();
-  }
-
-  Future<AuthClient?> getServiceAccountClient() async {
-    return _credentials == null
-        ? null
-        : await clientViaServiceAccount(_credentials!, [_scopes]);
   }
 }

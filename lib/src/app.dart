@@ -5,11 +5,11 @@ import 'package:provider/provider.dart';
 import 'common/themes/material.dart';
 import 'models/app_model.dart';
 import 'screens/main.dart';
+import 'services/gauth.dart';
 import 'widgets/dialogs/login.dart';
 import 'widgets/navbars/bottom.dart';
 import 'widgets/side_menu.dart';
 import 'widgets/navbars/top.dart';
-import 'services/gauth.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -24,20 +24,20 @@ class AppState extends State<App> {
   @override
   void initState() {
     super.initState();
-    _loadAccounts();
+    _initialize();
   }
 
-  Future<void> _loadAccounts() async {
-    List<String?> tempAccountsList = await GAuthService.savedCredentialsList();
-    if (tempAccountsList.isNotEmpty) {
-      context.read<AppModel>().accounts = tempAccountsList;
-    } else {
-      popupLogin(context);
-      List<String?> newAccountsList = await GAuthService.savedCredentialsList();
-      if (newAccountsList.isNotEmpty) {
-        context.read<AppModel>().accounts = newAccountsList;
-      }
+  Future<void> _initialize() async {
+    AppModel model = context.read<AppModel>();
+    GAuthService gauth = GAuthService(model.selectedClientEmail);
+
+    model.authClient = gauth.client;
+    model.accounts = await GAuthService.listSavedCredentials();
+    if (model.accounts!.isEmpty) {
+      showLoginDialog(context);
     }
+    model.selectedClientEmail =
+        model.selectedClientEmail ?? model.accounts!.first;
   }
 
   void _onItemTapped(int index) {
@@ -63,7 +63,9 @@ class AppState extends State<App> {
               appBar: TopBarWidget(
                 screen: _selectedIndex == 0 ? "Files" : "Share with me",
               ),
-              body: Center(child: MainScreen()),
+              body: Center(
+                child: MainScreen(isSharedWithMe: _selectedIndex == 1),
+              ),
 
               bottomNavigationBar: BottomBarWidget(
                 selectedIndex: _selectedIndex,

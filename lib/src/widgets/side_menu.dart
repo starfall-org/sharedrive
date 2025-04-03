@@ -46,7 +46,7 @@ class SideMenuState extends State<SideMenu> {
             leading: Icon(Icons.logout),
             title: Text("Add Service Account"),
             onTap: () {
-              popupLogin(context);
+              showLoginDialog(context);
             },
           ),
         ],
