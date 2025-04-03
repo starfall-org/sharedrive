@@ -20,24 +20,29 @@ class App extends StatefulWidget {
 
 class AppState extends State<App> {
   int _selectedIndex = 0;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _initialize();
+    _initialize().then((_) {
+      setState(() {
+        _isInitialized = true;
+      });
+    });
   }
 
   Future<void> _initialize() async {
     AppModel model = context.read<AppModel>();
-    GAuthService gauth = GAuthService(clientEmail: model.selectedClientEmail);
+    GAuthService gauth = GAuthService(context: context);
 
-    model.authClient = gauth.client;
+    model.authClient = await gauth.getAuthClient();
     model.accounts = await GAuthService.listSavedCredentials();
-    if (model.accounts!.isEmpty) {
+    if (model.accounts == null || model.accounts!.isEmpty) {
       showLoginDialog(context);
     }
     model.selectedClientEmail =
-        model.selectedClientEmail ?? model.accounts!.first;
+        model.selectedClientEmail ?? model.accounts?.first;
   }
 
   void _onItemTapped(int index) {
@@ -50,6 +55,9 @@ class AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         return MaterialApp(

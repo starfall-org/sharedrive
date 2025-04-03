@@ -1,29 +1,19 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
+
+import '../models/app_model.dart';
 
 class GAuthService {
   final String _scopes = 'https://www.googleapis.com/auth/drive';
-  late ServiceAccountCredentials _credentials;
-  late AuthClient _client;
+  BuildContext context;
 
-  GAuthService({required String? clientEmail}) {
-    init(clientEmail);
-  }
+  GAuthService({required this.context});
 
-  Future<void> init(String? clientEmail) async {
-    await loadCredentials(clientEmail);
-    await _loadAuthClient();
-  }
-
-  AuthClient get client => _client;
-
-  Future<void> _loadAuthClient() async {
-    _client = await clientViaServiceAccount(_credentials, [_scopes]);
-  }
-
-  Future<void> loadCredentials(String? clientEmail) async {
+  Future<ServiceAccountCredentials> loadCredentials(String? clientEmail) async {
     String filePath;
     if (clientEmail != null) {
       final dir = await getApplicationDocumentsDirectory();
@@ -45,7 +35,7 @@ class GAuthService {
     try {
       final jsonStr = await file.readAsString();
       final data = jsonDecode(jsonStr);
-      _credentials = ServiceAccountCredentials.fromJson(data);
+      return ServiceAccountCredentials.fromJson(data);
     } catch (e) {
       throw Exception("Không thể đọc credentials từ tệp: $filePath");
     }
@@ -96,5 +86,11 @@ class GAuthService {
         .where((f) => f is File && f.path.endsWith('.json'))
         .map((f) => f.uri.pathSegments.last.replaceAll('.json', ''))
         .toList();
+  }
+
+  Future<AuthClient> getAuthClient() async {
+    String? clientEmail = context.read<AppModel>().selectedClientEmail;
+    ServiceAccountCredentials credentials = await loadCredentials(clientEmail);
+    return clientViaServiceAccount(credentials, [_scopes]);
   }
 }

@@ -23,20 +23,27 @@ class SideMenuState extends State<SideMenu> {
         children: [
           Consumer<AppModel>(
             builder: (context, model, child) {
+              final accounts = model.accounts ?? [];
+              final selectedEmail = model.selectedClientEmail;
+
               return UserAccountsDrawerHeader(
-                accountName: Text("Service Account"),
+                accountName: const Text("Service Account"),
                 accountEmail: DropdownButton<String>(
-                  value: model.selectedClientEmail,
+                  value: selectedEmail,
                   items:
-                      model.accounts!
+                      accounts
                           .map(
                             (email) => DropdownMenuItem(
                               value: email,
-                              child: Text(email!),
+                              child: Text(email ?? 'Unknown'),
                             ),
                           )
                           .toList(),
-                  onChanged: (value) => {model.selectedClientEmail = value},
+                  onChanged: (value) {
+                    setState(() {
+                      model.selectedClientEmail = value;
+                    });
+                  },
                 ),
               );
             },

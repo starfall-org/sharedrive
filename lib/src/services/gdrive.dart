@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 import 'dart:io' as io;
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -133,6 +135,22 @@ class GDriveService {
       throw Exception('Failed to load video: Media not found');
     } catch (e) {
       throw Exception('Failed to load video to cache: $e');
+    }
+  }
+
+  Future<String> downloadFileAsString(String fileId) async {
+    final url = 'https://www.googleapis.com/drive/v3/files/$fileId?alt=media';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer ${authClient.credentials.accessToken}',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return utf8.decode(response.bodyBytes);
+    } else {
+      throw Exception('Failed to download file: ${response.reasonPhrase}');
     }
   }
 }
