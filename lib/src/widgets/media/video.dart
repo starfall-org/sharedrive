@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
@@ -38,6 +37,13 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
       if (!mounted) return;
 
+      _videoPlayerController.addListener(() {
+        if (_videoPlayerController.value.position ==
+            _videoPlayerController.value.duration) {
+          setState(() {});
+        }
+      });
+
       setState(() {
         _chewieController = ChewieController(
           videoPlayerController: _videoPlayerController,
@@ -49,7 +55,6 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
           autoPlay: _autoPlay,
           looping: _looping,
           showControlsOnInitialize: true,
-
           additionalOptions:
               (context) => <OptionItem>[
                 OptionItem(

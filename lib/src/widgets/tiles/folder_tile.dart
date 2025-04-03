@@ -9,11 +9,9 @@ Widget folderTile({
   required Function loadFilesList,
   required GDriveService googleDriveService,
 }) {
-  IconData fileIcon =
-      file.mimeType?.startsWith('video/') == true
-          ? Icons.video_file
-          : Icons.insert_drive_file;
-
+  IconData fileIcon = Icons.folder;
+  Color backgroundColor = Theme.of(context).colorScheme.surfaceContainerHighest;
+  
   return ListTile(
     leading: Icon(fileIcon),
     trailing: PopupMenuButton<String>(
@@ -27,7 +25,8 @@ Widget folderTile({
       },
     ),
     title: Text(file.name ?? 'Unnamed directory'),
-    subtitle: Text(file.mimeType ?? 'Unknown type'),
+    subtitle: Text(file.createdTime.toString()),
+    tileColor: backgroundColor,
     onTap: () async {
       await loadFilesList(folderId: file.id);
     },

@@ -29,7 +29,7 @@ void showLoginDialog(BuildContext context) {
     context: context,
     builder: (context) {
       return AlertDialog(
-        title: Text('Đăng Nhập'),
+        title: Text('Login'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -40,7 +40,7 @@ void showLoginDialog(BuildContext context) {
                   controller: credController,
                   maxLines: null,
                   decoration: InputDecoration(
-                    hintText: 'Nhập hoặc chọn file JSON',
+                    hintText: 'Enter or select JSON file',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -63,18 +63,18 @@ void showLoginDialog(BuildContext context) {
                       } else {
                         _showErrorDialog(
                           context,
-                          'File JSON không hợp lệ hoặc thiếu khóa "client_email".',
+                          'Invalid JSON file or missing "client_email" key.',
                         );
                       }
                     }
                   } catch (e) {
                     _showErrorDialog(
                       context,
-                      'Lỗi khi đọc file: ${e.toString()}',
+                      'Error reading file: ${e.toString()}',
                     );
                   }
                 },
-                child: Text('Chọn file JSON'),
+                child: Text('Select JSON file'),
               ),
             ],
           ),
@@ -131,7 +131,7 @@ void _showErrorDialog(BuildContext context, String message) {
     context: context,
     builder: (context) {
       return AlertDialog(
-        title: Text('Lỗi'),
+        title: Text('Error'),
         content: Text(message),
         actions: [
           TextButton(
