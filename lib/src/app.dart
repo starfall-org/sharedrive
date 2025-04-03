@@ -1,15 +1,15 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:provider/provider.dart';
 
-import './common/themes/material.dart';
-import './screens/main.dart';
-import './widgets/dialogs/login.dart';
+import 'common/themes/material.dart';
+import 'models/app_model.dart';
+import 'screens/main.dart';
+import 'widgets/dialogs/login.dart';
 import 'widgets/navbars/bottom.dart';
-import './widgets/side_menu.dart';
+import 'widgets/side_menu.dart';
 import 'widgets/navbars/top.dart';
-import './services/gauth.dart';
+import 'services/gauth.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -20,7 +20,6 @@ class App extends StatefulWidget {
 
 class AppState extends State<App> {
   int _selectedIndex = 0;
-  List<String> accounts = [];
 
   @override
   void initState() {
@@ -28,24 +27,15 @@ class AppState extends State<App> {
     _loadAccounts();
   }
 
-  void _onLogin(String creds) async {
-    await GAuthService.saveCredentials(creds);
-    _loadAccounts();
-  }
-
   Future<void> _loadAccounts() async {
-    var tempAccountsList = await GAuthService.savedCredentialsList();
+    List<String?> tempAccountsList = await GAuthService.savedCredentialsList();
     if (tempAccountsList.isNotEmpty) {
-      setState(() {
-        accounts = tempAccountsList;
-      });
+      context.read<AppModel>().accounts = tempAccountsList;
     } else {
-      popupLogin(context, _onLogin);
-      var newAccountsList = await GAuthService.savedCredentialsList();
+      popupLogin(context);
+      List<String?> newAccountsList = await GAuthService.savedCredentialsList();
       if (newAccountsList.isNotEmpty) {
-        setState(() {
-          accounts = newAccountsList;
-        });
+        context.read<AppModel>().accounts = newAccountsList;
       }
     }
   }
@@ -74,6 +64,7 @@ class AppState extends State<App> {
                 screen: _selectedIndex == 0 ? "Files" : "Share with me",
               ),
               body: Center(child: MainScreen()),
+
               bottomNavigationBar: BottomBarWidget(
                 selectedIndex: _selectedIndex,
                 onItemTapped: _onItemTapped,

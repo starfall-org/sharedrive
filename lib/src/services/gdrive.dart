@@ -6,8 +6,10 @@ import 'package:flutter/services.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis_auth/googleapis_auth.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 
 import '../common/notification.dart';
+import '../models/app_model.dart';
 
 class GDriveService {
   late AuthClient? _authClient;
@@ -52,6 +54,7 @@ class GDriveService {
       );
 
       _files = fileList?.files ?? [];
+      _context.read<AppModel>().files = _files;
     } catch (e) {
       throw Exception('Failed to list files: $e');
     }

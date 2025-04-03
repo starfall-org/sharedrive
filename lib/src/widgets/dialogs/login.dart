@@ -4,7 +4,9 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
-void popupLogin(BuildContext context, Function(String) onLogin) {
+import '../../services/gauth.dart';
+
+void popupLogin(BuildContext context) {
   TextEditingController credController = TextEditingController();
 
   showDialog(
@@ -73,7 +75,7 @@ void popupLogin(BuildContext context, Function(String) onLogin) {
               if (_isValidJson(credController.text)) {
                 Navigator.of(context).pop();
                 try {
-                  onLogin(credController.text);
+                  GAuthService.saveCredentials(credController.text);
                 } catch (e) {
                   _showErrorDialog(context, e.toString());
                 }

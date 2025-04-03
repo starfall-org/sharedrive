@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:googleapis/drive/v3.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:googleapis_auth/googleapis_auth.dart';
+import 'package:provider/provider.dart';
 
 import '../services/gauth.dart';
 import '../services/gdrive.dart';
-import '../settings/credentials.dart';
+import '../models/app_model.dart';
+import '../widgets/tiles/file_tile.dart';
+import '../widgets/tiles/folder_tile.dart';
 
 class MainScreen extends StatefulWidget {
   final String? folderId;
@@ -25,8 +27,6 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   GDriveService? _googleDriveService;
-  AuthClient? authClient;
-  List<File> _files = [];
 
   @override
   void initState() {
@@ -39,22 +39,14 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    _googleDriveService?.close();
-    super.dispose();
-  }
-
   Future<void> _initAuthClient() async {
-    CredentialsNotifier credentialsSettings = CredentialsNotifier();
-    String? selectedClientEmail = credentialsSettings.clientEmail;
+    String? selectedClientEmail = context.read<AppModel>().selectedClientEmail;
     GAuthService gauth = GAuthService(selectedClientEmail);
-    authClient = await gauth.getServiceAccountClient();
+    AuthClient? authClient = await gauth.getServiceAccountClient();
+
     if (authClient != null) {
-      _googleDriveService = GDriveService(
-        client: authClient!,
-        context: context,
-      );
+      context.read<AppModel>().authClient = authClient;
+      _googleDriveService = GDriveService(client: authClient, context: context);
     }
   }
 
@@ -65,14 +57,10 @@ class _MainScreenState extends State<MainScreen> {
   }) async {
     if (_googleDriveService != null) {
       await _googleDriveService!.listFiles(
-        folderId: folderId,
+        folderId: folderId ?? 'root',
         sharedWithMe: sharedWithMe,
         trashed: trashed,
       );
-
-      setState(() {
-        _files = _googleDriveService!.files;
-      });
     }
   }
 
@@ -121,47 +109,30 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildFileTile(File file) {
-    IconData fileIcon =
-        file.mimeType?.startsWith('video/') == true
-            ? Icons.video_file
-            : Icons.insert_drive_file;
-    return ListTile(
-      leading: Icon(fileIcon),
-      title: Text(file.name ?? 'Unnamed file'),
-      onTap: () {},
-    );
-  }
-
-  Widget _buildDirectoryTile(File file) {
-    return ListTile(
-      leading: Icon(Icons.folder),
-      trailing: Icon(Icons.arrow_forward_ios),
-      title: Text(file.name ?? 'Unnamed directory'),
-      subtitle: Text(file.mimeType ?? 'Unknown type'),
-      onTap: () async {
-        await _googleDriveService?.listFiles(folderId: file.id);
-        await _loadFilesList();
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Files')),
-      body:
-          _files.isEmpty
+      body: Consumer<AppModel>(
+        builder: (context, model, child) {
+          return model.files == null || model.files!.isEmpty
               ? Center(child: Text('No files available'))
               : ListView.builder(
-                itemCount: _files.length,
+                itemCount: model.files!.length,
                 itemBuilder: (context, index) {
-                  final file = _files[index];
-                  return file.mimeType == 'application/vnd.google-apps.folder'
-                      ? _buildDirectoryTile(file)
-                      : _buildFileTile(file);
+                  final file = model.files![index];
+                  return file!.mimeType == 'application/vnd.google-apps.folder'
+                      ? FolderTile(
+                        file: file,
+                        googleDriveService: _googleDriveService!,
+                        loadFilesList: _loadFilesList,
+                      )
+                      : FileTile(file: file);
                 },
-              ),
+              );
+        },
+      ),
+
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

@@ -5,7 +5,7 @@ import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
 import 'package:provider/provider.dart';
 
-import '../../settings/video.dart';
+import '../../models/video.dart';
 import '../../common/notification.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
