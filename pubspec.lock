@@ -117,10 +117,10 @@ packages:
     dependency: "direct main"
     description:
       name: chewie
-      sha256: "0bf6f7692cb65f7b8f59a2a17025b9cbe8f75ab4251e66161a4fc86162475fb6"
+      sha256: df6711bc3ba165ad19cb496e350250be5673327f79c61c9cc8a15088ed8007ed
       url: "https://pub.dev"
     source: hosted
-    version: "1.11.0"
+    version: "1.11.1"
   cli_util:
     dependency: transitive
     description:
@@ -221,10 +221,10 @@ packages:
     dependency: "direct main"
     description:
       name: file_picker
-      sha256: "09b474c0c8117484b80cbebc043801ff91e05cfbd2874d512825c899e1754694"
+      sha256: "36a1652d99cb6bf8ccc8b9f43aded1fd60b234d23ce78af422c07f950a436ef7"
       url: "https://pub.dev"
     source: hosted
-    version: "9.2.3"
+    version: "10.0.0"
   fixnum:
     dependency: transitive
     description:
