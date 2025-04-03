@@ -1,23 +1,26 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:path_provider/path_provider.dart';
 
 class GAuthService {
   final String _scopes = 'https://www.googleapis.com/auth/drive';
-  late ServiceAccountCredentials? _credentials;
+  late ServiceAccountCredentials _credentials;
   late AuthClient _client;
 
-  GAuthService(String? clientEmail) {
-    loadCredentials(clientEmail);
-    _loadAuthClient();
+  GAuthService({required String? clientEmail}) {
+    init(clientEmail);
   }
 
-  get client => _client;
+  Future<void> init(String? clientEmail) async {
+    await loadCredentials(clientEmail);
+    await _loadAuthClient();
+  }
+
+  AuthClient get client => _client;
 
   Future<void> _loadAuthClient() async {
-    _client = await clientViaServiceAccount(_credentials!, [_scopes]);
+    _client = await clientViaServiceAccount(_credentials, [_scopes]);
   }
 
   Future<void> loadCredentials(String? clientEmail) async {
@@ -27,6 +30,9 @@ class GAuthService {
       filePath = '${dir.path}/credentials/$clientEmail.json';
     } else {
       List credentialsList = await listSavedCredentials();
+      if (credentialsList.isEmpty) {
+        throw Exception("Không có credentials nào được lưu.");
+      }
       final dir = await getApplicationDocumentsDirectory();
       filePath = '${dir.path}/credentials/${credentialsList[0]}.json';
     }

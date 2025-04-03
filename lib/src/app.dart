@@ -29,7 +29,7 @@ class AppState extends State<App> {
 
   Future<void> _initialize() async {
     AppModel model = context.read<AppModel>();
-    GAuthService gauth = GAuthService(model.selectedClientEmail);
+    GAuthService gauth = GAuthService(clientEmail: model.selectedClientEmail);
 
     model.authClient = gauth.client;
     model.accounts = await GAuthService.listSavedCredentials();
