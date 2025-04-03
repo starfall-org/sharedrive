@@ -56,7 +56,7 @@ class SideMenuState extends State<SideMenu> {
           ),
 
           ListTile(
-            leading: Icon(Icons.logout),
+            leading: Icon(Icons.account_box),
             title: Text("Add Service Account"),
             onTap: () {
               showLoginDialog(context);

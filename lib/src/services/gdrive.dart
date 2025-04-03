@@ -1,7 +1,5 @@
 import 'dart:typed_data';
 import 'dart:io' as io;
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -95,6 +93,14 @@ class GDriveService {
     }
   }
 
+  Future<void> deleteFile(String? fileId) async {
+    try {
+      await _driveApi.files.delete(fileId!);
+    } catch (e) {
+      throw Exception('Failed to delete file: $e');
+    }
+  }
+
   Future<void> createFolder(String folderName) async {
     try {
       var driveFile =
@@ -107,50 +113,25 @@ class GDriveService {
     }
   }
 
-  Future<io.File> loadVideoToCache(String fileId, String fileName) async {
+  Future<Uint8List> loadFileToBytes(String fileId) async {
     try {
-      final cacheDir = await getTemporaryDirectory();
-      final cachePath = '${cacheDir.path}/$fileName';
-      final cacheFile = io.File(cachePath);
-
-      if (await cacheFile.exists()) {
-        return cacheFile;
-      }
-
       var media = await _driveApi.files.get(
         fileId,
         downloadOptions: drive.DownloadOptions.fullMedia,
       );
 
       if (media is drive.Media) {
-        Uint8List bytes = await media.stream.fold<Uint8List>(
-          Uint8List(0),
-          (previous, element) => Uint8List.fromList([...previous, ...element]),
-        );
+        final buffer = <int>[];
+        await for (var chunk in media.stream) {
+          buffer.addAll(chunk);
+        }
 
-        await cacheFile.writeAsBytes(bytes);
-        return cacheFile;
+        return Uint8List.fromList(buffer);
       }
 
-      throw Exception('Failed to load video: Media not found');
+      throw Exception('Failed to load file: Media not found');
     } catch (e) {
-      throw Exception('Failed to load video to cache: $e');
-    }
-  }
-
-  Future<String> downloadFileAsString(String fileId) async {
-    final url = 'https://www.googleapis.com/drive/v3/files/$fileId?alt=media';
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {
-        'Authorization': 'Bearer ${authClient.credentials.accessToken}',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      return utf8.decode(response.bodyBytes);
-    } else {
-      throw Exception('Failed to download file: ${response.reasonPhrase}');
+      throw Exception('Failed to load file to bytes: $e');
     }
   }
 }

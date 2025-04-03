@@ -10,10 +10,19 @@ void main() async {
 
   requestPermissions();
 
-  runApp(
-    MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AppModel())],
-      child: const App(),
-    ),
-  );
+  runApp(ChangeNotifierProvider(create: (_) => AppModel(), child: _Main()));
+}
+
+class _Main extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'GSA Drive',
+      home: Builder(
+        builder: (context) {
+          return App();
+        },
+      ),
+    );
+  }
 }

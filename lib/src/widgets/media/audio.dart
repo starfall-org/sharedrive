@@ -1,10 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 class AudioPlayerWidget extends StatefulWidget {
-  final String audioUrl;
+  final Uint8List audioData;
 
-  const AudioPlayerWidget({super.key, required this.audioUrl});
+  const AudioPlayerWidget({super.key, required this.audioData});
 
   @override
   State<AudioPlayerWidget> createState() => _AudioPlayerWidgetState();
@@ -17,7 +19,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
-    _audioPlayer.setSourceUrl(widget.audioUrl);
+    _audioPlayer.setSourceBytes(widget.audioData);
     _audioPlayer.resume();
   }
 

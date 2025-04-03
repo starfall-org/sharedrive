@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
@@ -5,9 +7,9 @@ import 'package:video_player/video_player.dart';
 import '../../common/notification.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
-  final String videoUrl;
+  final Uint8List videoData;
 
-  const VideoPlayerWidget({super.key, required this.videoUrl});
+  const VideoPlayerWidget({super.key, required this.videoData});
 
   @override
   VideoPlayerWidgetState createState() => VideoPlayerWidgetState();
@@ -28,8 +30,8 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
   Future<void> _initializePlayer() async {
     try {
-      _videoPlayerController = VideoPlayerController.networkUrl(
-        Uri.parse(widget.videoUrl),
+      _videoPlayerController = VideoPlayerController.contentUri(
+        Uri.dataFromBytes(widget.videoData),
       );
 
       await _videoPlayerController.initialize();

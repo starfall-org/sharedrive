@@ -8,6 +8,20 @@ import 'package:provider/provider.dart';
 import '../../models/app_model.dart';
 import '../../services/gauth.dart';
 
+void checkAndShowLoginDialog(BuildContext context) {
+  final appModel = context.read<AppModel>();
+
+  final clientEmail = appModel.selectedClientEmail;
+
+  if (clientEmail!.isEmpty) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (appModel.selectedClientEmail!.isEmpty) {
+        showLoginDialog(context);
+      }
+    });
+  }
+}
+
 void showLoginDialog(BuildContext context) {
   TextEditingController credController = TextEditingController();
 
@@ -80,7 +94,9 @@ void showLoginDialog(BuildContext context) {
                   GAuthService.saveCredentials(credController.text);
                   var credJson = jsonDecode(credController.text);
                   var clientEmail = credJson['client_email'];
-                  context.read<AppModel>().selectedClientEmail = clientEmail;
+                  context.read<AppModel>().updateClientEmail(
+                    clientEmail,
+                  ); // Notify listeners
                 } catch (e) {
                   _showErrorDialog(context, e.toString());
                 }

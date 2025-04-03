@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:googleapis/drive/v3.dart';
 
@@ -22,8 +25,35 @@ Widget fileTile({
   return ListTile(
     leading: Icon(fileIcon),
     title: Text(file.name ?? 'Unnamed file'),
+    trailing: PopupMenuButton<String>(
+      onSelected: (value) {
+        if (value == 'delete') {
+          _deleteFile(context, file, googleDriveService);
+        }
+      },
+      itemBuilder: (BuildContext context) {
+        return [PopupMenuItem<String>(value: 'delete', child: Text('Delete'))];
+      },
+    ),
     onTap: () => openFile(context, file, googleDriveService),
   );
+}
+
+void _deleteFile(
+  BuildContext context,
+  File file,
+  GDriveService googleDriveService,
+) async {
+  try {
+    await googleDriveService.deleteFile(file.id);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('File deleted successfully')));
+  } catch (e) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Error deleting file: $e')));
+  }
 }
 
 void openFile(
@@ -33,11 +63,11 @@ void openFile(
 ) {
   final mimeType = file.mimeType ?? '';
   if (mimeType.startsWith('image/')) {
-    _viewImage(context, file);
+    _viewImage(context, file, googleDriveService);
   } else if (mimeType.startsWith('video/')) {
-    _playVideo(context, file);
+    _playVideo(context, file, googleDriveService);
   } else if (mimeType.startsWith('audio/')) {
-    _playAudio(context, file);
+    _playAudio(context, file, googleDriveService);
   } else if (mimeType.startsWith('text/') || mimeType == 'application/json') {
     _viewText(context, file, googleDriveService);
   } else {
@@ -47,51 +77,103 @@ void openFile(
   }
 }
 
-void _viewImage(BuildContext context, dynamic file) {
+void _viewImage(
+  BuildContext context,
+  dynamic file,
+  GDriveService googleDriveService,
+) {
   Navigator.push(
     context,
     MaterialPageRoute(
       builder:
           (context) => Scaffold(
             appBar: AppBar(title: Text(file.name ?? 'Image Viewer')),
-            body: Center(
-              child: Image.network(
-                file.webContentLink ?? '',
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
+            body: FutureBuilder<Uint8List>(
+              future: googleDriveService.loadFileToBytes(file.id),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
-                },
-                errorBuilder: (context, error, stackTrace) {
+                } else if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Error loading image: ${snapshot.error}'),
+                  );
+                } else if (snapshot.hasData) {
+                  return Center(
+                    child: Image.memory(snapshot.data ?? Uint8List(0)),
+                  );
+                } else {
                   return const Center(child: Text('Failed to load image'));
-                },
-              ),
+                }
+              },
             ),
           ),
     ),
   );
 }
 
-void _playVideo(BuildContext context, dynamic file) {
+void _playVideo(
+  BuildContext context,
+  dynamic file,
+  GDriveService googleDriveService,
+) {
   Navigator.push(
     context,
     MaterialPageRoute(
       builder:
           (context) => Scaffold(
             appBar: AppBar(title: Text(file.name ?? 'Video Player')),
-            body: VideoPlayerWidget(videoUrl: file.webContentLink ?? ''),
+            body: FutureBuilder<Uint8List>(
+              future: googleDriveService.loadFileToBytes(file.id),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Error loading video: ${snapshot.error}'),
+                  );
+                } else if (snapshot.hasData) {
+                  return VideoPlayerWidget(
+                    videoData: snapshot.data ?? Uint8List(0),
+                  );
+                } else {
+                  return const Center(child: Text('Failed to load video'));
+                }
+              },
+            ),
           ),
     ),
   );
 }
 
-void _playAudio(BuildContext context, dynamic file) {
+void _playAudio(
+  BuildContext context,
+  dynamic file,
+  GDriveService googleDriveService,
+) {
   Navigator.push(
     context,
     MaterialPageRoute(
       builder:
           (context) => Scaffold(
             appBar: AppBar(title: Text(file.name ?? 'Audio Player')),
-            body: AudioPlayerWidget(audioUrl: file.webContentLink ?? ''),
+            body: FutureBuilder<Uint8List>(
+              future: googleDriveService.loadFileToBytes(file.id),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Error loading audio: ${snapshot.error}'),
+                  );
+                } else if (snapshot.hasData) {
+                  return AudioPlayerWidget(
+                    audioData: snapshot.data ?? Uint8List(0),
+                  );
+                } else {
+                  return const Center(child: Text('Failed to load audio'));
+                }
+              },
+            ),
           ),
     ),
   );
@@ -108,8 +190,8 @@ void _viewText(
       builder:
           (context) => Scaffold(
             appBar: AppBar(title: Text(file.name ?? 'Text Viewer')),
-            body: FutureBuilder<String>(
-              future: googleDriveService.downloadFileAsString(file.id),
+            body: FutureBuilder<Uint8List>(
+              future: googleDriveService.loadFileToBytes(file.id),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -120,7 +202,9 @@ void _viewText(
                 } else {
                   return SingleChildScrollView(
                     padding: const EdgeInsets.all(16.0),
-                    child: SelectableText(snapshot.data ?? ''),
+                    child: SelectableText(
+                      utf8.decode(snapshot.data ?? Uint8List(0)),
+                    ),
                   );
                 }
               },

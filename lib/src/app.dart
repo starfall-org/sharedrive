@@ -163,6 +163,7 @@ class AppState extends State<App> {
                                       context: context,
                                       file: file,
                                       loadFilesList: _loadFilesList,
+                                      googleDriveService: _googleDriveService!,
                                     )
                                     : fileTile(
                                       context: context,

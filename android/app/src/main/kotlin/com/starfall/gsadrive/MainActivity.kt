@@ -1,4 +1,4 @@
-package com.example.gsadrive
+package com.starfall.gsadrive
 
 import io.flutter.embedding.android.FlutterActivity
 

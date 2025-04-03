@@ -13,7 +13,9 @@ class GAuthService {
 
   GAuthService({required this.context});
 
-  Future<ServiceAccountCredentials> loadCredentials(String? clientEmail) async {
+  Future<ServiceAccountCredentials?> loadCredentials(
+    String? clientEmail,
+  ) async {
     String filePath;
     if (clientEmail != null) {
       final dir = await getApplicationDocumentsDirectory();
@@ -21,7 +23,8 @@ class GAuthService {
     } else {
       List credentialsList = await listSavedCredentials();
       if (credentialsList.isEmpty) {
-        throw Exception("Không có credentials nào được lưu.");
+        // Trả về null nếu không có credentials nào được lưu
+        return null;
       }
       final dir = await getApplicationDocumentsDirectory();
       filePath = '${dir.path}/credentials/${credentialsList[0]}.json';
@@ -29,7 +32,8 @@ class GAuthService {
 
     final file = File(filePath);
     if (!await file.exists()) {
-      throw Exception("Credentials không tồn tại cho tài khoản: $clientEmail.");
+      // Trả về null nếu file không tồn tại
+      return null;
     }
 
     try {
@@ -88,9 +92,14 @@ class GAuthService {
         .toList();
   }
 
-  Future<AuthClient> getAuthClient() async {
+  Future<AuthClient?> getAuthClient() async {
     String? clientEmail = context.read<AppModel>().selectedClientEmail;
-    ServiceAccountCredentials credentials = await loadCredentials(clientEmail);
+    ServiceAccountCredentials? credentials = await loadCredentials(clientEmail);
+
+    if (credentials == null) {
+      return null;
+    }
+
     return clientViaServiceAccount(credentials, [_scopes]);
   }
 }

@@ -62,4 +62,9 @@ class AppModel extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString("selected_client_email", _selectedClientEmail ?? "");
   }
+
+  void updateClientEmail(String email) {
+    selectedClientEmail = email;
+    notifyListeners();
+  }
 }
