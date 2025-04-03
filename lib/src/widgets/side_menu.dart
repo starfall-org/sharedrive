@@ -45,6 +45,12 @@ class SideMenuState extends State<SideMenu> {
                     });
                   },
                 ),
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/icon.png'),
+                    fit: BoxFit.cover,
+                  ),
+                ),
               );
             },
           ),
