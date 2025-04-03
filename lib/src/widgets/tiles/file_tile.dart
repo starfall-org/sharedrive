@@ -13,13 +13,16 @@ Widget fileTile({
   IconData fileIcon =
       file.mimeType?.startsWith('video/') == true
           ? Icons.video_file
+          : file.mimeType?.startsWith('audio/') == true
+          ? Icons.audiotrack
+          : file.mimeType?.startsWith('image/') == true
+          ? Icons.image
           : Icons.insert_drive_file;
+
   return ListTile(
     leading: Icon(fileIcon),
     title: Text(file.name ?? 'Unnamed file'),
-    onTap: () {
-      /// openFile(context, file, googleDriveService);
-    },
+    onTap: () => openFile(context, file, googleDriveService),
   );
 }
 
@@ -50,8 +53,19 @@ void _viewImage(BuildContext context, dynamic file) {
     MaterialPageRoute(
       builder:
           (context) => Scaffold(
-            appBar: AppBar(title: Text(file.name)),
-            body: Center(child: Image.network(file.webContentLink ?? '')),
+            appBar: AppBar(title: Text(file.name ?? 'Image Viewer')),
+            body: Center(
+              child: Image.network(
+                file.webContentLink ?? '',
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(child: CircularProgressIndicator());
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(child: Text('Failed to load image'));
+                },
+              ),
+            ),
           ),
     ),
   );
@@ -63,10 +77,8 @@ void _playVideo(BuildContext context, dynamic file) {
     MaterialPageRoute(
       builder:
           (context) => Scaffold(
-            appBar: AppBar(title: Text(file.name)),
-            body: Center(
-              child: VideoPlayerWidget(videoUrl: file.webContentLink ?? ''),
-            ),
+            appBar: AppBar(title: Text(file.name ?? 'Video Player')),
+            body: VideoPlayerWidget(videoUrl: file.webContentLink ?? ''),
           ),
     ),
   );
@@ -78,10 +90,8 @@ void _playAudio(BuildContext context, dynamic file) {
     MaterialPageRoute(
       builder:
           (context) => Scaffold(
-            appBar: AppBar(title: Text(file.name)),
-            body: Center(
-              child: AudioPlayerWidget(audioUrl: file.webContentLink ?? ''),
-            ),
+            appBar: AppBar(title: Text(file.name ?? 'Audio Player')),
+            body: AudioPlayerWidget(audioUrl: file.webContentLink ?? ''),
           ),
     ),
   );
@@ -97,18 +107,20 @@ void _viewText(
     MaterialPageRoute(
       builder:
           (context) => Scaffold(
-            appBar: AppBar(title: Text(file.name)),
+            appBar: AppBar(title: Text(file.name ?? 'Text Viewer')),
             body: FutureBuilder<String>(
               future: googleDriveService.downloadFileAsString(file.id),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasError) {
-                  return Center(child: Text('Error loading file'));
+                  return Center(
+                    child: Text('Error loading file: ${snapshot.error}'),
+                  );
                 } else {
                   return SingleChildScrollView(
                     padding: const EdgeInsets.all(16.0),
-                    child: Text(snapshot.data ?? ''),
+                    child: SelectableText(snapshot.data ?? ''),
                   );
                 }
               },
