@@ -1,17 +1,13 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
-import 'package:provider/provider.dart';
 
-import '../../models/video.dart';
 import '../../common/notification.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
-  final File videoFile;
+  final String videoUrl;
 
-  const VideoPlayerWidget({super.key, required this.videoFile});
+  const VideoPlayerWidget({super.key, required this.videoUrl});
 
   @override
   VideoPlayerWidgetState createState() => VideoPlayerWidgetState();
@@ -21,6 +17,8 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
   bool _isInitializing = true;
+  bool _autoPlay = false;
+  bool _looping = false;
 
   @override
   void initState() {
@@ -29,15 +27,10 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   }
 
   Future<void> _initializePlayer() async {
-    if (widget.videoFile.path.isEmpty) {
-      postNotification(context, "Video is empty");
-      return;
-    }
-
-    final videoSettings = context.watch<VideoSettingsNotifier>();
-
     try {
-      _videoPlayerController = VideoPlayerController.file(widget.videoFile);
+      _videoPlayerController = VideoPlayerController.networkUrl(
+        Uri.parse(widget.videoUrl),
+      );
 
       await _videoPlayerController.initialize();
 
@@ -51,44 +44,27 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                   ? _videoPlayerController.value.aspectRatio
                   : 9 / 16,
           showControls: true,
-          autoPlay: videoSettings.autoPlay,
-          looping: videoSettings.looping,
+          autoPlay: _autoPlay,
+          looping: _looping,
           showControlsOnInitialize: true,
-          fullScreenByDefault: videoSettings.fullscreenByDefault,
+
           additionalOptions:
               (context) => <OptionItem>[
                 OptionItem(
                   onTap:
-                      (_) => videoSettings.autoPlay = !videoSettings.autoPlay,
-                  iconData:
-                      videoSettings.autoPlay ? Icons.autorenew : Icons.pause,
-                  title:
-                      videoSettings.autoPlay
-                          ? "Disable autoplay"
-                          : "Enable autoplay",
-                ),
-                OptionItem(
-                  onTap: (_) => videoSettings.looping = !videoSettings.looping,
-                  iconData:
-                      videoSettings.looping ? Icons.repeat : Icons.repeat_one,
-                  title:
-                      videoSettings.looping
-                          ? "Disable looping"
-                          : "Enable looping",
+                      (_) => setState(() {
+                        _autoPlay = !_autoPlay;
+                      }),
+                  iconData: _autoPlay ? Icons.autorenew : Icons.pause,
+                  title: _autoPlay ? "Disable autoplay" : "Enable autoplay",
                 ),
                 OptionItem(
                   onTap:
-                      (_) =>
-                          videoSettings.fullscreenByDefault =
-                              !videoSettings.fullscreenByDefault,
-                  iconData:
-                      videoSettings.fullscreenByDefault
-                          ? Icons.fullscreen_exit
-                          : Icons.fullscreen,
-                  title:
-                      videoSettings.fullscreenByDefault
-                          ? "Disable fullscreen by default"
-                          : "Enable fullscreen by default",
+                      (_) => setState(() {
+                        _looping = !_looping;
+                      }),
+                  iconData: _looping ? Icons.repeat : Icons.repeat_one,
+                  title: _looping ? "Disable looping" : "Enable looping",
                 ),
               ],
         );
