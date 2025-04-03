@@ -95,7 +95,10 @@ class GDriveService {
 
   Future<void> deleteFile(String? fileId) async {
     try {
-      await _driveApi.files.delete(fileId!);
+      if (fileId == null || fileId == 'root') {
+        return;
+      }
+      await _driveApi.files.delete(fileId);
     } catch (e) {
       throw Exception('Failed to delete file: $e');
     }
