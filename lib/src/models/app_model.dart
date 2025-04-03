@@ -15,12 +15,15 @@ class AppModel extends ChangeNotifier {
   List<String?>? _accounts;
   List<File?>? _files;
   CurrentFolder? _currentFolder;
+  List<String?> _folderHistory = [];
+  final List<String> _navigationStack = ['root'];
 
   String? get selectedClientEmail => _selectedClientEmail;
   AuthClient? get authClient => _authClient;
   List<String?>? get accounts => _accounts;
   List<File?>? get files => _files;
   CurrentFolder? get currentFolder => _currentFolder;
+  String get currentFolderId => _navigationStack.last;
 
   AppModel() {
     _loadFromPrefs();
@@ -50,6 +53,31 @@ class AppModel extends ChangeNotifier {
   set currentFolder(CurrentFolder? value) {
     _currentFolder = value;
     notifyListeners();
+  }
+
+  void addFolderToHistory(String folderId) {
+    _folderHistory.add(folderId);
+    notifyListeners();
+  }
+
+  void removeFolderFromHistory(String folderId) {
+    _folderHistory.remove(folderId);
+    notifyListeners();
+  }
+
+  void navigateToFolder(String folderId) {
+    _navigationStack.add(folderId);
+    notifyListeners();
+  }
+
+  bool get canGoBack => _navigationStack.length > 1;
+
+  String? goBack() {
+    if (canGoBack) {
+      _navigationStack.removeLast();
+      return currentFolderId;
+    }
+    return null;
   }
 
   Future<void> _loadFromPrefs() async {
