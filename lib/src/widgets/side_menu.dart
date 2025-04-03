@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../widgets/dialogs/login.dart';
 import '../models/app_model.dart';
+import '../widgets/dialogs/about.dart';
 
 class SideMenu extends StatefulWidget {
   const SideMenu({super.key});
@@ -60,6 +61,14 @@ class SideMenuState extends State<SideMenu> {
             title: Text("Add Service Account"),
             onTap: () {
               showLoginDialog(context);
+            },
+          ),
+
+          ListTile(
+            leading: Icon(Icons.info),
+            title: Text("About"),
+            onTap: () {
+              showAbout(context);
             },
           ),
         ],
