@@ -11,7 +11,7 @@ import 'widgets/dialogs/login.dart';
 import 'widgets/navbars/bottom.dart';
 import 'widgets/side_menu.dart';
 import 'widgets/navbars/top.dart';
-import 'widgets/tiles/file_tile.dart';
+import 'widgets/tiles/file_menu.dart';
 import 'widgets/tiles/folder_tile.dart';
 
 class App extends StatefulWidget {
