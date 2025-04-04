@@ -3,30 +3,21 @@ import 'dart:io' as io;
 
 import 'package:flutter/services.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:googleapis/drive/v3.dart';
 import 'package:path_provider/path_provider.dart';
 
 class FileModel {
-  drive.DriveApi driveApi;
-  String fileId;
+  final drive.DriveApi driveApi;
+  final File file;
 
-  FileModel({required this.driveApi, required this.fileId});
+  FileModel({required this.driveApi, required this.file});
 
-  Future metadata({String additionalFields = ''}) async {
-    try {
-      var file = await driveApi.files.get(
-        fileId,
-        $fields: 'id,name,mimeType,size,modifiedTime,parents,$additionalFields',
-      );
-      return file;
-    } catch (e) {
-      throw Exception('Failed to get file: $e');
-    }
-  }
+  Future metadata({String additionalFields = ''}) async {}
 
-  Future<io.File?> download(String? fileName) async {
+  Future<io.File?> download() async {
     try {
       var media = await driveApi.files.get(
-        fileId,
+        file.id!,
         downloadOptions: drive.DownloadOptions.fullMedia,
       );
       if (media is drive.Media) {
@@ -38,10 +29,10 @@ class FileModel {
         final directory =
             await getDownloadsDirectory() ??
             await getApplicationDocumentsDirectory();
-        String savePath = '${directory.path}/$fileName';
-        io.File file = io.File(savePath);
-        await file.writeAsBytes(bytes);
-        return file;
+        String savePath = '${directory.path}/${file.name}';
+        io.File fileIo = io.File(savePath);
+        await fileIo.writeAsBytes(bytes);
+        return fileIo;
       }
 
       return null;
@@ -52,7 +43,7 @@ class FileModel {
 
   Future<void> delete() async {
     try {
-      await driveApi.files.delete(fileId);
+      await driveApi.files.delete(file.id!);
     } catch (e) {
       throw Exception('Failed to delete file: $e');
     }
@@ -62,9 +53,9 @@ class FileModel {
     try {
       var driveFile =
           drive.File()
-            ..id = fileId
+            ..id = file.id!
             ..parents = [newParentId];
-      await driveApi.files.update(driveFile, fileId);
+      await driveApi.files.update(driveFile, file.id!);
     } catch (e) {
       throw Exception('Failed to move file: $e');
     }
@@ -74,9 +65,9 @@ class FileModel {
     try {
       var driveFile =
           drive.File()
-            ..id = fileId
+            ..id = file.id!
             ..parents = [newParentId];
-      await driveApi.files.copy(driveFile, fileId);
+      await driveApi.files.copy(driveFile, file.id!);
     } catch (e) {
       throw Exception('Failed to copy file: $e');
     }
@@ -94,10 +85,10 @@ class FileModel {
     }
   }
 
-  Future<Uint8List> getBytes(String fileId) async {
+  Future<Uint8List> getBytes() async {
     try {
       var media = await driveApi.files.get(
-        fileId,
+        file.id!,
         downloadOptions: drive.DownloadOptions.fullMedia,
       );
 

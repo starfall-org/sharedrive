@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:googleapis_auth/googleapis_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:file_picker/file_picker.dart';
 
 import 'common/themes/material.dart';
+import 'data/credentials.dart';
 import 'models/app_model.dart';
+import 'models/file_model.dart';
 import 'services/gauth.dart';
 import 'services/gdrive.dart';
+import 'widgets/actions/float_button.dart';
 import 'widgets/dialogs/login.dart';
+import 'widgets/file_list.dart';
 import 'widgets/navbars/bottom.dart';
+import 'widgets/open_file.dart';
 import 'widgets/side_menu.dart';
 import 'widgets/navbars/top.dart';
-import 'widgets/tiles/file_menu.dart';
-import 'widgets/tiles/folder_tile.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -24,7 +27,8 @@ class App extends StatefulWidget {
 class AppState extends State<App> {
   int _selectedIndex = 0;
   bool _isInitialized = false;
-  GDriveService? _googleDriveService;
+  late final GDrive gds;
+  List<FileModel> files = [];
 
   @override
   void initState() {
@@ -37,24 +41,18 @@ class AppState extends State<App> {
   }
 
   Future<void> _initialize() async {
-    AppModel model = context.read<AppModel>();
-    GAuthService gauth = GAuthService(context: context);
-
-    model.authClient = await gauth.getAuthClient();
-    model.accounts = await GAuthService.listSavedCredentials();
-    if (model.accounts == null || model.accounts!.isEmpty) {
+    List credList = await Credentials.list();
+    String? selectedCred = await Credentials.getSelected();
+    if (credList.isEmpty) {
       showLoginDialog(context);
     }
-    model.selectedClientEmail =
-        model.selectedClientEmail ?? model.accounts?.first;
-
-    if (model.authClient != null) {
-      _googleDriveService = GDriveService(
-        context: context,
-        authClient: model.authClient!,
-      );
-      await _loadFilesList();
+    if (selectedCred == null) {
+      Credentials.setSelected(credList.first['client_email']);
     }
+
+    AuthClient? authClient = await gauthClient(selectedCred!);
+    gds = GDrive.instance;
+    gds.init(authClient!);
   }
 
   Future<void> _loadFilesList({
@@ -62,61 +60,22 @@ class AppState extends State<App> {
     bool sharedWithMe = false,
     bool trashed = false,
   }) async {
-    if (_googleDriveService != null) {
-      if (folderId != null) {
-        context.read<AppModel>().navigateToFolder(folderId);
-      }
-      await _googleDriveService!.listFiles(
-        folderId: folderId ?? context.read<AppModel>().currentFolderId,
-        sharedWithMe: sharedWithMe,
-        trashed: trashed,
-      );
+    if (folderId != null) {
+      context.read<AppModel>().navigateToFolder(folderId);
     }
-  }
-
-  Future<void> _uploadFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null) {
-      String filePath = result.files.single.path ?? '';
-      if (filePath.isNotEmpty) {
-        await _googleDriveService?.uploadFile(filePath);
-        await _loadFilesList();
-      }
-    }
-  }
-
-  Future<void> _createFolder() async {
-    TextEditingController folderController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Create Folder"),
-          content: TextField(
-            controller: folderController,
-            decoration: const InputDecoration(hintText: "Enter folder name"),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (folderController.text.isNotEmpty) {
-                  await _googleDriveService?.createFolder(
-                    folderController.text,
-                  );
-                  await _loadFilesList();
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text("Create"),
-            ),
-          ],
-        );
-      },
+    files = await gds.ls(
+      folderId: folderId ?? context.read<AppModel>().currentFolderId,
+      sharedWithMe: sharedWithMe,
+      trashed: trashed,
     );
+  }
+
+  void _onOpen(FileModel fileModel) {
+    if (fileModel.file.mimeType == 'application/vnd.google-apps.folder') {
+      _loadFilesList(folderId: fileModel.file.id);
+    } else {
+      OpenFile(context: context, fileModel: fileModel).open();
+    }
   }
 
   void _onItemTapped(int index) {
@@ -146,58 +105,20 @@ class AppState extends State<App> {
                   appBar: TopBarWidget(
                     screen: _selectedIndex == 0 ? 'Home' : 'Shared with me',
                   ),
-                  body:
-                      model.files == null || model.files!.isEmpty
-                          ? const Center(child: Text('No files available'))
-                          : ListView.builder(
-                            itemCount: model.files!.length,
-                            itemBuilder: (context, index) {
-                              final file = model.files![index];
-                              return GestureDetector(
-                                onTap:
-                                    () => openFile(
-                                      context,
-                                      file,
-                                      _googleDriveService!,
-                                    ),
-                                child:
-                                    file!.mimeType ==
-                                            'application/vnd.google-apps.folder'
-                                        ? folderTile(
-                                          context: context,
-                                          file: file,
-                                          loadFilesList: _loadFilesList,
-                                          googleDriveService:
-                                              _googleDriveService!,
-                                        )
-                                        : fileTile(
-                                          context: context,
-                                          file: file,
-                                          googleDriveService:
-                                              _googleDriveService!,
-                                        ),
-                              );
-                            },
-                          ),
+                  body: FileListWidget(
+                    fileModels: files,
+                    gds: gds,
+                    open: _onOpen,
+                  ),
                   bottomNavigationBar: BottomBarWidget(
                     selectedIndex: _selectedIndex,
                     onItemTapped: _onItemTapped,
                   ),
-                  floatingActionButton: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      FloatingActionButton(
-                        onPressed: _createFolder,
-                        tooltip: 'Create Folder',
-                        child: const Icon(Icons.create_new_folder),
-                      ),
-                      const SizedBox(height: 10),
-                      FloatingActionButton(
-                        onPressed: _uploadFile,
-                        tooltip: 'Upload File',
-                        child: const Icon(Icons.upload_file),
-                      ),
-                    ],
+                  floatingActionButton: FloatButtons(
+                    gds: gds,
+                    onSuccess: () {
+                      _loadFilesList();
+                    },
                   ),
                 );
               },

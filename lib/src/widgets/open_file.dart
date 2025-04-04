@@ -1,16 +1,42 @@
-  void _viewImage(
-    BuildContext context,
-    dynamic file,
-    GDriveService googleDriveService,
-  ) {
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+import 'package:googleapis/drive/v3.dart';
+import '../models/file_model.dart';
+import 'media/audio.dart';
+import 'media/video.dart';
+
+class OpenFile {
+  final BuildContext context;
+  final FileModel fileModel;
+  late File file;
+
+  OpenFile({required this.context, required this.fileModel}) {
+    file = fileModel.file;
+  }
+
+  void open() {
+    if (file.mimeType?.startsWith('image/') == true) {
+      _viewImage();
+    } else if (file.mimeType?.startsWith('video/') == true) {
+      _playVideo();
+    } else if (file.mimeType?.startsWith('audio/') == true) {
+      _playAudio();
+    } else if (['application/json'].contains(file.mimeType) == true ||
+        file.mimeType?.startsWith('text/') == true) {
+      _viewText();
+    }
+  }
+
+  void _viewImage() {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder:
             (context) => Scaffold(
-              appBar: AppBar(title: Text(file.name ?? 'Image Viewer')),
               body: FutureBuilder<Uint8List>(
-                future: googleDriveService.loadFileToBytes(file.id),
+                future: fileModel.getBytes(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -32,19 +58,14 @@
     );
   }
 
-  void _playVideo(
-    BuildContext context,
-    dynamic file,
-    GDriveService googleDriveService,
-  ) {
+  void _playVideo() {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder:
             (context) => Scaffold(
-              appBar: AppBar(title: Text(file.name ?? 'Video Player')),
               body: FutureBuilder<Uint8List>(
-                future: googleDriveService.loadFileToBytes(file.id),
+                future: fileModel.getBytes(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -66,19 +87,14 @@
     );
   }
 
-  void _playAudio(
-    BuildContext context,
-    dynamic file,
-    GDriveService googleDriveService,
-  ) {
+  void _playAudio() {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder:
             (context) => Scaffold(
-              appBar: AppBar(title: Text(file.name ?? 'Audio Player')),
               body: FutureBuilder<Uint8List>(
-                future: googleDriveService.loadFileToBytes(file.id),
+                future: fileModel.getBytes(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -100,19 +116,14 @@
     );
   }
 
-  void _viewText(
-    BuildContext context,
-    dynamic file,
-    GDriveService googleDriveService,
-  ) {
+  void _viewText() {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder:
             (context) => Scaffold(
-              appBar: AppBar(title: Text(file.name ?? 'Text Viewer')),
               body: FutureBuilder<Uint8List>(
-                future: googleDriveService.loadFileToBytes(file.id),
+                future: fileModel.getBytes(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -134,3 +145,4 @@
       ),
     );
   }
+}

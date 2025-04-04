@@ -3,6 +3,20 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Credentials {
+  static Future<String?> getSelected() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? selectedClientEmail = prefs.getString("selected_client_email");
+    if (selectedClientEmail != null) {
+      return selectedClientEmail;
+    }
+    return null;
+  }
+
+  static Future<void> setSelected(String clientEmail) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString("selected_client_email", clientEmail);
+  }
+
   static Future<void> save(String credString) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> credList = prefs.getStringList("gauth_credentials") ?? [];

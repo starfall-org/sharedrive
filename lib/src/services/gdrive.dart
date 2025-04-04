@@ -3,7 +3,7 @@ import 'dart:io' as io;
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis_auth/googleapis_auth.dart';
 
-import '../models/gdrive/file.dart';
+import '../models/file_model.dart';
 
 class GDrive {
   static final _instance = GDrive._internal();
@@ -15,10 +15,6 @@ class GDrive {
 
   Future<void> init(AuthClient authClient) async {
     _driveApi = drive.DriveApi(authClient);
-  }
-
-  FileModel file(String fileId) {
-    return FileModel(driveApi: _driveApi, fileId: fileId);
   }
 
   Future<List<FileModel>> ls({
@@ -47,7 +43,7 @@ class GDrive {
       );
       List<FileModel> files = [];
       for (var file in response.files ?? []) {
-        files.add(FileModel(driveApi: _driveApi, fileId: file.id));
+        files.add(FileModel(driveApi: _driveApi, file: file));
       }
       return files;
     } catch (e) {
