@@ -6,7 +6,8 @@ import '../models/app_model.dart';
 import '../widgets/dialogs/about.dart';
 
 class SideMenu extends StatefulWidget {
-  const SideMenu({super.key});
+  final Function(String) login;
+  const SideMenu({super.key, required this.login});
   @override
   SideMenuState createState() => SideMenuState();
 }
@@ -60,7 +61,7 @@ class SideMenuState extends State<SideMenu> {
             leading: Icon(Icons.account_tree),
             title: Text("Add Service Account"),
             onTap: () {
-              showLoginDialog(context);
+              showLoginDialog(context, widget.login);
             },
           ),
 

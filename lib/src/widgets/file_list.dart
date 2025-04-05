@@ -30,11 +30,11 @@ class _FileListState extends State<FileListWidget> {
 
     return ListTile(
       leading: Icon(fileIcon),
-      trailing: FileMenuWidget(file: file, gds: widget.gds),
+      trailing: FileMenuWidget(fileModel: fileModel, gds: widget.gds),
       title: Text(file.name ?? 'Unnamed directory'),
       subtitle: Text(file.createdTime.toString()),
       tileColor: backgroundColor,
-      onTap: () => {widget.open(file)},
+      onTap: () => {widget.open(fileModel)},
     );
   }
 
@@ -52,7 +52,7 @@ class _FileListState extends State<FileListWidget> {
     return ListTile(
       leading: Icon(fileIcon),
       title: Text(file.name ?? 'Unnamed file'),
-      onTap: () => {widget.open(file)},
+      onTap: () => {widget.open(fileModel)},
     );
   }
 
@@ -63,10 +63,11 @@ class _FileListState extends State<FileListWidget> {
         : ListView.builder(
           itemCount: widget.fileModels.length,
           itemBuilder: (context, index) {
-            final file = widget.fileModels[index].file;
-            return file.mimeType == 'application/vnd.google-apps.folder'
-                ? folderTile(file: file)
-                : fileTile(file: file);
+            final fileModel = widget.fileModels[index];
+            return fileModel.file.mimeType ==
+                    'application/vnd.google-apps.folder'
+                ? folderTile(fileModel: fileModel)
+                : fileTile(fileModel: fileModel);
           },
         );
   }

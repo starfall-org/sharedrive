@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:googleapis/drive/v3.dart';
 import 'package:gsadrive/src/widgets/dialogs/show_metadata.dart';
 
+import '../../models/file_model.dart';
 import '../../services/gdrive.dart';
 
 class FileMenuWidget extends StatefulWidget {
-  final File file;
+  final FileModel fileModel;
   final GDrive gds;
 
-  const FileMenuWidget({super.key, required this.file, required this.gds});
+  const FileMenuWidget({super.key, required this.fileModel, required this.gds});
   @override
   State<FileMenuWidget> createState() => _FileMenuState();
 }
@@ -19,21 +19,16 @@ class _FileMenuState extends State<FileMenuWidget> {
     return PopupMenuButton(
       itemBuilder:
           (context) => [
-            PopupMenuItem(
-              child: Text('Info'),
-              onTap: () => _metadata(widget.file),
-            ),
-            PopupMenuItem(
-              child: Text('Delete'),
-              onTap: () => _delete(widget.file),
-            ),
+            PopupMenuItem(child: Text('Download'), onTap: () => _download()),
+            PopupMenuItem(child: Text('Info'), onTap: () => _metadata()),
+            PopupMenuItem(child: Text('Delete'), onTap: () => _delete()),
           ],
     );
   }
 
-  void _metadata(File file) {
+  void _metadata() {
     try {
-      showMetadataDialog(context, widget.gds.file(file.id!));
+      showMetadataDialog(context, widget.fileModel);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error getting file metadata: $e')),
@@ -41,9 +36,9 @@ class _FileMenuState extends State<FileMenuWidget> {
     }
   }
 
-  void _delete(File file) {
+  void _delete() {
     try {
-      widget.gds.file(file.id!).delete();
+      widget.fileModel.delete();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('File deleted successfully')));
@@ -51,6 +46,16 @@ class _FileMenuState extends State<FileMenuWidget> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error deleting file: $e')));
+    }
+  }
+
+  void _download() {
+    try {
+      widget.fileModel.download();
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error downloading file: $e')));
     }
   }
 }

@@ -3,26 +3,10 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../../models/app_model.dart';
-import '../../services/gauth.dart';
+import '../../data/credentials.dart';
 
-void checkAndShowLoginDialog(BuildContext context) {
-  final appModel = context.read<AppModel>();
-
-  final clientEmail = appModel.selectedClientEmail;
-
-  if (clientEmail!.isEmpty) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (appModel.selectedClientEmail!.isEmpty) {
-        showLoginDialog(context);
-      }
-    });
-  }
-}
-
-void showLoginDialog(BuildContext context) {
+void showLoginDialog(BuildContext context, Function(String) login) {
   TextEditingController credController = TextEditingController();
 
   showDialog(
@@ -91,12 +75,9 @@ void showLoginDialog(BuildContext context) {
               if (_isValidJson(credController.text)) {
                 Navigator.of(context).pop();
                 try {
-                  GAuthService.saveCredentials(credController.text);
-                  var credJson = jsonDecode(credController.text);
-                  var clientEmail = credJson['client_email'];
-                  context.read<AppModel>().updateClientEmail(
-                    clientEmail,
-                  ); // Notify listeners
+                  Credentials.save(credController.text);
+                  Map creds = jsonDecode(credController.text);
+                  login(creds['client_email']);
                 } catch (e) {
                   _showErrorDialog(context, e.toString());
                 }

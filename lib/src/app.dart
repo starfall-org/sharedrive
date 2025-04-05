@@ -42,15 +42,19 @@ class AppState extends State<App> {
 
   Future<void> _initialize() async {
     List credList = await Credentials.list();
-    String? selectedCred = await Credentials.getSelected();
+    String? selectedClientEmail = await Credentials.getSelected();
     if (credList.isEmpty) {
-      showLoginDialog(context);
+      showLoginDialog(context, _login);
     }
-    if (selectedCred == null) {
+    if (selectedClientEmail == null) {
       Credentials.setSelected(credList.first['client_email']);
     }
+    selectedClientEmail = await Credentials.getSelected();
+    _login(selectedClientEmail!);
+  }
 
-    AuthClient? authClient = await gauthClient(selectedCred!);
+  Future<void> _login(String clientEmail) async {
+    AuthClient? authClient = await gauthClient(clientEmail);
     gds = GDrive.instance;
     gds.init(authClient!);
   }
@@ -101,7 +105,7 @@ class AppState extends State<App> {
             child: Consumer<AppModel>(
               builder: (context, model, child) {
                 return Scaffold(
-                  drawer: const SideMenu(),
+                  drawer: SideMenu(login: _login),
                   appBar: TopBarWidget(
                     screen: _selectedIndex == 0 ? 'Home' : 'Shared with me',
                   ),
