@@ -39,6 +39,15 @@ class SideMenuState extends State<SideMenu> {
 
   @override
   Widget build(BuildContext context) {
+    // Ensure accounts list has unique values
+    final uniqueAccounts = accounts.toSet().toList();
+
+    // Ensure selectedClientEmail is valid
+    if (!uniqueAccounts.contains(selectedClientEmail)) {
+      selectedClientEmail =
+          uniqueAccounts.isNotEmpty ? uniqueAccounts.first : null;
+    }
+
     return Drawer(
       child: Column(
         children: [
@@ -47,7 +56,7 @@ class SideMenuState extends State<SideMenu> {
             accountEmail: DropdownButton<String>(
               value: selectedClientEmail,
               items:
-                  accounts
+                  uniqueAccounts
                       .map(
                         (email) =>
                             DropdownMenuItem(value: email, child: Text(email)),

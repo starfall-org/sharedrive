@@ -20,7 +20,28 @@ class Credentials {
   static Future<void> save(String credString) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> credList = prefs.getStringList("gauth_credentials") ?? [];
-    await prefs.setStringList("gauth_credentials", [...credList, credString]);
+
+    // Decode the new credential
+    var newCred = jsonDecode(credString);
+
+    // Check if the client_email already exists
+    bool updated = false;
+    for (int i = 0; i < credList.length; i++) {
+      var existingCred = jsonDecode(credList[i]);
+      if (existingCred['client_email'] == newCred['client_email']) {
+        // Update the existing credential
+        credList[i] = credString;
+        updated = true;
+        break;
+      }
+    }
+
+    // If not updated, add the new credential
+    if (!updated) {
+      credList.add(credString);
+    }
+
+    await prefs.setStringList("gauth_credentials", credList);
   }
 
   static Future<Map?> get(String clientEmail) async {

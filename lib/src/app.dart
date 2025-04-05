@@ -59,11 +59,13 @@ class AppState extends State<App> {
     bool sharedWithMe = false,
     bool trashed = false,
   }) async {
-    files = await gds.ls(
-      folderId: folderId,
-      sharedWithMe: sharedWithMe,
-      trashed: trashed,
-    );
+    setState(() async {
+      files = await gds.ls(
+        folderId: folderId,
+        sharedWithMe: sharedWithMe,
+        trashed: trashed,
+      );
+    });
   }
 
   void _onOpen(FileModel fileModel) {
