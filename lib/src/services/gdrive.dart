@@ -8,13 +8,15 @@ import '../models/file_model.dart';
 class GDrive {
   static final _instance = GDrive._internal();
   static GDrive get instance => _instance;
+  bool isLoggedIn = false;
 
   late drive.DriveApi _driveApi;
 
   GDrive._internal();
 
-  Future<void> init(AuthClient authClient) async {
+  Future<void> login(AuthClient authClient) async {
     _driveApi = drive.DriveApi(authClient);
+    isLoggedIn = true;
   }
 
   Future<List<FileModel>> ls({
@@ -22,6 +24,9 @@ class GDrive {
     bool sharedWithMe = false,
     bool trashed = false,
   }) async {
+    if (!isLoggedIn) {
+      return [];
+    }
     try {
       List<String> conditions = [];
 

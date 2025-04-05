@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
+import '../data/credentials.dart';
 import '../widgets/dialogs/login.dart';
-import '../models/app_model.dart';
 import '../widgets/dialogs/about.dart';
 
 class SideMenu extends StatefulWidget {
@@ -13,9 +12,20 @@ class SideMenu extends StatefulWidget {
 }
 
 class SideMenuState extends State<SideMenu> {
+  String? selectedClientEmail;
+  List<String> accounts = [];
   @override
   void initState() {
     super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    selectedClientEmail = await Credentials.getSelected();
+    List credList = await Credentials.list();
+    for (var cred in credList) {
+      accounts.add(cred['client_email']);
+    }
   }
 
   @override
@@ -23,38 +33,30 @@ class SideMenuState extends State<SideMenu> {
     return Drawer(
       child: Column(
         children: [
-          Consumer<AppModel>(
-            builder: (context, model, child) {
-              final accounts = model.accounts ?? [];
-              final selectedEmail = model.selectedClientEmail;
-
-              return UserAccountsDrawerHeader(
-                accountName: const Text("Service Account"),
-                accountEmail: DropdownButton<String>(
-                  value: selectedEmail,
-                  items:
-                      accounts
-                          .map(
-                            (email) => DropdownMenuItem(
-                              value: email,
-                              child: Text(email ?? 'Unknown'),
-                            ),
-                          )
-                          .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      model.selectedClientEmail = value;
-                    });
-                  },
-                ),
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/icon.png'),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              );
-            },
+          UserAccountsDrawerHeader(
+            accountName: const Text("Service Account"),
+            accountEmail: DropdownButton<String>(
+              value: selectedClientEmail,
+              items:
+                  accounts
+                      .map(
+                        (email) =>
+                            DropdownMenuItem(value: email, child: Text(email)),
+                      )
+                      .toList(),
+              onChanged: (value) {
+                setState(() {
+                  Credentials.setSelected(value!);
+                  widget.login(value);
+                });
+              },
+            ),
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/background.png'),
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
 
           ListTile(

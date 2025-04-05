@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:googleapis_auth/googleapis_auth.dart';
-import 'package:provider/provider.dart';
 
 import 'common/themes/material.dart';
 import 'data/credentials.dart';
-import 'models/app_model.dart';
 import 'models/file_model.dart';
 import 'services/gauth.dart';
 import 'services/gdrive.dart';
@@ -26,18 +24,14 @@ class App extends StatefulWidget {
 
 class AppState extends State<App> {
   int _selectedIndex = 0;
-  bool _isInitialized = false;
   late final GDrive gds;
   List<FileModel> files = [];
 
   @override
   void initState() {
     super.initState();
-    _initialize().then((_) {
-      setState(() {
-        _isInitialized = true;
-      });
-    });
+    gds = GDrive.instance;
+    _initialize();
   }
 
   Future<void> _initialize() async {
@@ -47,16 +41,17 @@ class AppState extends State<App> {
       showLoginDialog(context, _login);
     }
     if (selectedClientEmail == null) {
-      Credentials.setSelected(credList.first['client_email']);
+      selectedClientEmail = credList.first['client_email'];
+      Credentials.setSelected(selectedClientEmail!);
+    } else {
+      _login(selectedClientEmail);
     }
-    selectedClientEmail = await Credentials.getSelected();
-    _login(selectedClientEmail!);
+    _loadFilesList();
   }
 
   Future<void> _login(String clientEmail) async {
     AuthClient? authClient = await gauthClient(clientEmail);
-    gds = GDrive.instance;
-    gds.init(authClient!);
+    gds.login(authClient!);
   }
 
   Future<void> _loadFilesList({
@@ -64,11 +59,8 @@ class AppState extends State<App> {
     bool sharedWithMe = false,
     bool trashed = false,
   }) async {
-    if (folderId != null) {
-      context.read<AppModel>().navigateToFolder(folderId);
-    }
     files = await gds.ls(
-      folderId: folderId ?? context.read<AppModel>().currentFolderId,
+      folderId: folderId,
       sharedWithMe: sharedWithMe,
       trashed: trashed,
     );
@@ -92,9 +84,6 @@ class AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isInitialized) {
-      return const Center(child: CircularProgressIndicator());
-    }
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         return MaterialApp(
@@ -102,30 +91,22 @@ class AppState extends State<App> {
           darkTheme: darkTheme(darkDynamic),
           themeMode: ThemeMode.system,
           home: SafeArea(
-            child: Consumer<AppModel>(
-              builder: (context, model, child) {
-                return Scaffold(
-                  drawer: SideMenu(login: _login),
-                  appBar: TopBarWidget(
-                    screen: _selectedIndex == 0 ? 'Home' : 'Shared with me',
-                  ),
-                  body: FileListWidget(
-                    fileModels: files,
-                    gds: gds,
-                    open: _onOpen,
-                  ),
-                  bottomNavigationBar: BottomBarWidget(
-                    selectedIndex: _selectedIndex,
-                    onItemTapped: _onItemTapped,
-                  ),
-                  floatingActionButton: FloatButtons(
-                    gds: gds,
-                    onSuccess: () {
-                      _loadFilesList();
-                    },
-                  ),
-                );
-              },
+            child: Scaffold(
+              drawer: SideMenu(login: _login),
+              appBar: TopBarWidget(
+                screen: _selectedIndex == 0 ? 'Home' : 'Shared with me',
+              ),
+              body: FileListWidget(fileModels: files, gds: gds, open: _onOpen),
+              bottomNavigationBar: BottomBarWidget(
+                selectedIndex: _selectedIndex,
+                onItemTapped: _onItemTapped,
+              ),
+              floatingActionButton: FloatButtons(
+                gds: gds,
+                onSuccess: () {
+                  _loadFilesList();
+                },
+              ),
             ),
           ),
         );
