@@ -23,9 +23,18 @@ class SideMenuState extends State<SideMenu> {
   Future<void> _init() async {
     selectedClientEmail = await Credentials.getSelected();
     List credList = await Credentials.list();
-    for (var cred in credList) {
-      accounts.add(cred['client_email']);
-    }
+    setState(() {
+      accounts =
+          credList.map((cred) => cred['client_email'] as String).toList();
+    });
+  }
+
+  void _addAccount(String clientEmail) async {
+    await Credentials.setSelected(clientEmail);
+    await _init(); // Cập nhật danh sách tài khoản và trạng thái
+    setState(() {
+      selectedClientEmail = clientEmail;
+    });
   }
 
   @override
@@ -63,7 +72,9 @@ class SideMenuState extends State<SideMenu> {
             leading: Icon(Icons.account_tree),
             title: Text("Add Service Account"),
             onTap: () {
-              showLoginDialog(context, widget.login);
+              showLoginDialog(context, (clientEmail) {
+                _addAccount(clientEmail);
+              });
             },
           ),
 

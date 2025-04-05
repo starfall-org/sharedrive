@@ -50,11 +50,11 @@ class Credentials {
   static Future<List> list() async {
     final prefs = await SharedPreferences.getInstance();
     List credList = prefs.getStringList("gauth_credentials") ?? [];
+    List returnCredList = [];
     for (var cred in credList) {
       var jsonCred = jsonDecode(cred);
-      credList.remove(cred);
-      credList.add(jsonCred);
+      returnCredList.add(jsonCred);
     }
-    return credList;
+    return returnCredList;
   }
 }

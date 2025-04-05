@@ -77,7 +77,7 @@ void showLoginDialog(BuildContext context, Function(String) login) {
                 try {
                   Credentials.save(credController.text);
                   Map creds = jsonDecode(credController.text);
-                  login(creds['client_email']);
+                  login(creds['client_email']); // Gọi callback với email mới
                 } catch (e) {
                   _showErrorDialog(context, e.toString());
                 }
