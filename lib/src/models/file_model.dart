@@ -87,6 +87,14 @@ class FileModel {
 
   Future<Uint8List> getBytes() async {
     try {
+      final directory = await getApplicationCacheDirectory();
+      String cachePath = '${directory.path}/${file.id}_cache';
+      io.File cacheFile = io.File(cachePath);
+
+      if (await cacheFile.exists()) {
+        return await cacheFile.readAsBytes();
+      }
+
       var media = await driveApi.files.get(
         file.id!,
         downloadOptions: drive.DownloadOptions.fullMedia,
@@ -98,7 +106,11 @@ class FileModel {
           buffer.addAll(chunk);
         }
 
-        return Uint8List.fromList(buffer);
+        Uint8List bytes = Uint8List.fromList(buffer);
+
+        await cacheFile.writeAsBytes(bytes);
+
+        return bytes;
       }
 
       throw Exception('Failed to load file: Media not found');

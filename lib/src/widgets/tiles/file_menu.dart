@@ -42,6 +42,7 @@ class _FileMenuState extends State<FileMenuWidget> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('File deleted successfully')));
+      widget.gds.refresh();
     } catch (e) {
       ScaffoldMessenger.of(
         context,

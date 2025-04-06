@@ -17,9 +17,6 @@ class VideoPlayerWidget extends StatefulWidget {
 class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
-  bool _isInitializing = true;
-  bool _autoPlay = false;
-  bool _looping = false;
 
   @override
   void initState() {
@@ -33,16 +30,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         Uri.dataFromBytes(widget.videoData),
       );
 
-      await _videoPlayerController.initialize();
-
       if (!mounted) return;
-
-      _videoPlayerController.addListener(() {
-        if (_videoPlayerController.value.position ==
-            _videoPlayerController.value.duration) {
-          setState(() {});
-        }
-      });
 
       setState(() {
         _chewieController = ChewieController(
@@ -51,48 +39,19 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
               _videoPlayerController.value.aspectRatio > 0
                   ? _videoPlayerController.value.aspectRatio
                   : 9 / 16,
+          autoInitialize: true,
           showControls: true,
-          autoPlay: _autoPlay,
-          looping: _looping,
+          autoPlay: true,
           showControlsOnInitialize: true,
-          additionalOptions:
-              (context) => <OptionItem>[
-                OptionItem(
-                  onTap:
-                      (_) => setState(() {
-                        _autoPlay = !_autoPlay;
-                      }),
-                  iconData: _autoPlay ? Icons.autorenew : Icons.pause,
-                  title: _autoPlay ? "Disable autoplay" : "Enable autoplay",
-                ),
-                OptionItem(
-                  onTap:
-                      (_) => setState(() {
-                        _looping = !_looping;
-                      }),
-                  iconData: _looping ? Icons.repeat : Icons.repeat_one,
-                  title: _looping ? "Disable looping" : "Enable looping",
-                ),
-              ],
         );
-        _isInitializing = false;
       });
     } catch (e) {
       postNotification(context, "Failed to initialize player: $e");
-      setState(() => _isInitializing = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isInitializing) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_chewieController == null) {
-      return const Center(child: Text("Không thể phát video"));
-    }
-
     return Chewie(controller: _chewieController!);
   }
 

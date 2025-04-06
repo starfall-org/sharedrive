@@ -25,7 +25,6 @@ class App extends StatefulWidget {
 class AppState extends State<App> {
   int _selectedIndex = 0;
   late final GDrive gds;
-  List<FileModel> files = [];
 
   @override
   void initState() {
@@ -34,8 +33,13 @@ class AppState extends State<App> {
     _initialize();
   }
 
+  Future<void> _login(String clientEmail) async {
+    AuthClient? authClient = await gauthClient(clientEmail);
+    gds.login(authClient!);
+  }
+
   Future<void> _initialize() async {
-    List credList = await Credentials.list();
+    List<Map> credList = await Credentials.list();
     String? selectedClientEmail = await Credentials.getSelected();
     if (credList.isEmpty) {
       showLoginDialog(context, _login);
@@ -43,34 +47,14 @@ class AppState extends State<App> {
     if (selectedClientEmail == null) {
       selectedClientEmail = credList.first['client_email'];
       Credentials.setSelected(selectedClientEmail!);
-    } else {
-      _login(selectedClientEmail);
     }
-    _loadFilesList();
-  }
-
-  Future<void> _login(String clientEmail) async {
-    AuthClient? authClient = await gauthClient(clientEmail);
-    gds.login(authClient!);
-  }
-
-  Future<void> _loadFilesList({
-    String? folderId,
-    bool sharedWithMe = false,
-    bool trashed = false,
-  }) async {
-    setState(() async {
-      files = await gds.ls(
-        folderId: folderId,
-        sharedWithMe: sharedWithMe,
-        trashed: trashed,
-      );
-    });
+    _login(selectedClientEmail);
+    gds.ls();
   }
 
   void _onOpen(FileModel fileModel) {
     if (fileModel.file.mimeType == 'application/vnd.google-apps.folder') {
-      _loadFilesList(folderId: fileModel.file.id);
+      gds.ls(folderId: fileModel.file.id);
     } else {
       OpenFile(context: context, fileModel: fileModel).open();
     }
@@ -78,6 +62,11 @@ class AppState extends State<App> {
 
   void _onItemTapped(int index) {
     if (_selectedIndex != index) {
+      if (index == 0) {
+        gds.ls();
+      } else {
+        gds.ls(sharedWithMe: true);
+      }
       setState(() {
         _selectedIndex = index;
       });
@@ -95,20 +84,19 @@ class AppState extends State<App> {
           home: SafeArea(
             child: Scaffold(
               drawer: SideMenu(login: _login),
+
               appBar: TopBarWidget(
                 screen: _selectedIndex == 0 ? 'Home' : 'Shared with me',
               ),
-              body: FileListWidget(fileModels: files, gds: gds, open: _onOpen),
+
+              body: FileListWidget(gds: gds, open: _onOpen),
+
               bottomNavigationBar: BottomBarWidget(
                 selectedIndex: _selectedIndex,
                 onItemTapped: _onItemTapped,
               ),
-              floatingActionButton: FloatButtons(
-                gds: gds,
-                onSuccess: () {
-                  _loadFilesList();
-                },
-              ),
+
+              floatingActionButton: FloatButtons(gds: gds),
             ),
           ),
         );

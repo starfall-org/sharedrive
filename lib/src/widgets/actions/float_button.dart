@@ -5,8 +5,9 @@ import '../../services/gdrive.dart';
 
 class FloatButtons extends StatefulWidget {
   final GDrive gds;
-  final Function onSuccess;
-  const FloatButtons({super.key, required this.gds, required this.onSuccess});
+
+  const FloatButtons({super.key, required this.gds});
+
   @override
   State<FloatButtons> createState() => _FloatButtonsState();
 }
@@ -18,7 +19,7 @@ class _FloatButtonsState extends State<FloatButtons> {
       String filePath = result.files.single.path ?? '';
       if (filePath.isNotEmpty) {
         await widget.gds.upload(filePath);
-        widget.onSuccess();
+        widget.gds.refresh();
       }
     }
   }
@@ -43,7 +44,7 @@ class _FloatButtonsState extends State<FloatButtons> {
               onPressed: () async {
                 if (folderController.text.isNotEmpty) {
                   await widget.gds.mkdir(folderController.text);
-                  widget.onSuccess();
+                  widget.gds.refresh();
                   Navigator.pop(context);
                 }
               },

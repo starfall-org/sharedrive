@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class TopBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final String screen;
+
   const TopBarWidget({super.key, required this.screen});
 
   @override

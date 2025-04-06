@@ -6,22 +6,18 @@ import '../services/gdrive.dart';
 import 'tiles/file_menu.dart';
 
 class FileListWidget extends StatefulWidget {
-  final List<FileModel> fileModels;
   final GDrive gds;
   final Function(FileModel) open;
 
-  const FileListWidget({
-    super.key,
-    required this.fileModels,
-    required this.gds,
-    required this.open,
-  });
+  const FileListWidget({super.key, required this.gds, required this.open});
 
   @override
   State<FileListWidget> createState() => _FileListState();
 }
 
 class _FileListState extends State<FileListWidget> {
+  final GDrive gds = GDrive.instance;
+
   Widget folderTile({required FileModel fileModel}) {
     File file = fileModel.file;
     IconData fileIcon = Icons.folder;
@@ -51,6 +47,7 @@ class _FileListState extends State<FileListWidget> {
 
     return ListTile(
       leading: Icon(fileIcon),
+      trailing: FileMenuWidget(fileModel: fileModel, gds: widget.gds),
       title: Text(file.name ?? 'Unnamed file'),
       onTap: () => {widget.open(fileModel)},
     );
@@ -58,17 +55,30 @@ class _FileListState extends State<FileListWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.fileModels.isEmpty
-        ? const Center(child: Text('No files available'))
-        : ListView.builder(
-          itemCount: widget.fileModels.length,
-          itemBuilder: (context, index) {
-            final fileModel = widget.fileModels[index];
-            return fileModel.file.mimeType ==
-                    'application/vnd.google-apps.folder'
-                ? folderTile(fileModel: fileModel)
-                : fileTile(fileModel: fileModel);
-          },
+    return StreamBuilder<List<FileModel>>(
+      stream: widget.gds.filesListStream,
+      builder: (context, snapshot) {
+        final fileModels = snapshot.data ?? [];
+        return Scaffold(
+          appBar:
+              widget.gds.pathHistory.isEmpty ||
+                      widget.gds.pathHistory.last == 'shared'
+                  ? null
+                  : AppBar(
+                    leading: BackButton(onPressed: () => widget.gds.rollback()),
+                  ),
+          body: ListView.builder(
+            itemCount: fileModels.length,
+            itemBuilder: (context, index) {
+              final fileModel = fileModels[index];
+              return fileModel.file.mimeType ==
+                      'application/vnd.google-apps.folder'
+                  ? folderTile(fileModel: fileModel)
+                  : fileTile(fileModel: fileModel);
+            },
+          ),
         );
+      },
+    );
   }
 }
