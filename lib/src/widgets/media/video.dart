@@ -31,6 +31,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       );
 
       if (!mounted) return;
+      await _videoPlayerController.initialize();
 
       setState(() {
         _chewieController = ChewieController(
@@ -39,10 +40,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
               _videoPlayerController.value.aspectRatio > 0
                   ? _videoPlayerController.value.aspectRatio
                   : 9 / 16,
-          autoInitialize: true,
           showControls: true,
-          autoPlay: true,
-          showControlsOnInitialize: true,
         );
       });
     } catch (e) {
