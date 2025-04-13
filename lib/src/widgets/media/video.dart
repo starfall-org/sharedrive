@@ -15,8 +15,8 @@ class VideoPlayerWidget extends StatefulWidget {
 }
 
 class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
-  late VideoPlayerController _videoPlayerController;
-  ChewieController? _chewieController;
+  late final VideoPlayerController player;
+  late final ChewieController controller;
 
   @override
   void initState() {
@@ -26,37 +26,38 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
   Future<void> _initializePlayer() async {
     try {
-      _videoPlayerController = VideoPlayerController.contentUri(
+      player = VideoPlayerController.contentUri(
         Uri.dataFromBytes(widget.videoData),
       );
 
-      if (!mounted) return;
-      await _videoPlayerController.initialize();
-
-      setState(() {
-        _chewieController = ChewieController(
-          videoPlayerController: _videoPlayerController,
-          aspectRatio:
-              _videoPlayerController.value.aspectRatio > 0
-                  ? _videoPlayerController.value.aspectRatio
-                  : 9 / 16,
-          showControls: true,
-        );
-      });
+      controller = ChewieController(
+        videoPlayerController: player,
+        aspectRatio:
+            player.value.aspectRatio > 0 ? player.value.aspectRatio : 9 / 16,
+      );
+      player.addListener(_checkVideoEnd);
     } catch (e) {
       postNotification(context, "Failed to initialize player: $e");
     }
   }
 
+  void _checkVideoEnd() {
+    final isEnded = player.value.position >= player.value.duration;
+    if (isEnded && player.value.isInitialized && !player.value.isPlaying) {
+      Navigator.of(context).pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Chewie(controller: _chewieController!);
+    return Chewie(controller: controller);
   }
 
   @override
   void dispose() {
-    _videoPlayerController.dispose();
-    _chewieController?.dispose();
+    player.removeListener(_checkVideoEnd);
+    player.dispose();
+    controller.dispose();
     super.dispose();
   }
 }

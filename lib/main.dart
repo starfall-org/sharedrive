@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'src/app.dart';
 import 'src/common/permissions.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   requestPermissions();
+  WidgetsFlutterBinding.ensureInitialized();
 
   runApp(_Main());
 }
