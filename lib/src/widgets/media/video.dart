@@ -17,9 +17,6 @@ class VideoPlayerWidget extends StatefulWidget {
 class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
-  bool _isInitializing = true;
-  bool _autoPlay = false;
-  bool _looping = false;
 
   @override
   void initState() {
@@ -53,55 +50,30 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
               _videoPlayerController.value.aspectRatio > 0
                   ? _videoPlayerController.value.aspectRatio
                   : 9 / 16,
-          showControls: true,
-          autoPlay: _autoPlay,
-          looping: _looping,
-          showControlsOnInitialize: true,
-          additionalOptions:
-              (context) => <OptionItem>[
-                OptionItem(
-                  onTap:
-                      (_) => setState(() {
-                        _autoPlay = !_autoPlay;
-                      }),
-                  iconData: _autoPlay ? Icons.autorenew : Icons.pause,
-                  title: _autoPlay ? "Disable autoplay" : "Enable autoplay",
-                ),
-                OptionItem(
-                  onTap:
-                      (_) => setState(() {
-                        _looping = !_looping;
-                      }),
-                  iconData: _looping ? Icons.repeat : Icons.repeat_one,
-                  title: _looping ? "Disable looping" : "Enable looping",
-                ),
-              ],
+          autoPlay: true,
         );
-        _isInitializing = false;
       });
     } catch (e) {
       postNotification(context, "Failed to initialize player: $e");
-      setState(() => _isInitializing = false);
     }
   }
 
   void _checkVideoEnd() {
-    final isEnded =
-        _videoPlayerController.value.position >=
-        _videoPlayerController.value.duration;
-    if (isEnded &&
-        _videoPlayerController.value.isInitialized &&
-        !_videoPlayerController.value.isPlaying) {
-      Navigator.of(context).pop();
+    final controller = _videoPlayerController;
+    if (!controller.value.isInitialized) return;
+
+    final isEnded = controller.value.position >= controller.value.duration;
+    final isNotPlaying = !controller.value.isPlaying;
+
+    if (isEnded && isNotPlaying) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).maybePop();
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isInitializing) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     if (_chewieController == null) {
       return const Center(child: Text("Không thể phát video"));
     }
