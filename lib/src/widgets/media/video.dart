@@ -15,8 +15,11 @@ class VideoPlayerWidget extends StatefulWidget {
 }
 
 class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
-  late final VideoPlayerController player;
-  late final ChewieController controller;
+  late VideoPlayerController _videoPlayerController;
+  ChewieController? _chewieController;
+  bool _isInitializing = true;
+  bool _autoPlay = false;
+  bool _looping = false;
 
   @override
   void initState() {
@@ -26,38 +29,91 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
   Future<void> _initializePlayer() async {
     try {
-      player = VideoPlayerController.contentUri(
+      _videoPlayerController = VideoPlayerController.contentUri(
         Uri.dataFromBytes(widget.videoData),
       );
 
-      controller = ChewieController(
-        videoPlayerController: player,
-        aspectRatio:
-            player.value.aspectRatio > 0 ? player.value.aspectRatio : 9 / 16,
-      );
-      player.addListener(_checkVideoEnd);
+      _videoPlayerController.addListener(_checkVideoEnd);
+
+      await _videoPlayerController.initialize();
+
+      if (!mounted) return;
+
+      _videoPlayerController.addListener(() {
+        if (_videoPlayerController.value.position ==
+            _videoPlayerController.value.duration) {
+          setState(() {});
+        }
+      });
+
+      setState(() {
+        _chewieController = ChewieController(
+          videoPlayerController: _videoPlayerController,
+          aspectRatio:
+              _videoPlayerController.value.aspectRatio > 0
+                  ? _videoPlayerController.value.aspectRatio
+                  : 9 / 16,
+          showControls: true,
+          autoPlay: _autoPlay,
+          looping: _looping,
+          showControlsOnInitialize: true,
+          additionalOptions:
+              (context) => <OptionItem>[
+                OptionItem(
+                  onTap:
+                      (_) => setState(() {
+                        _autoPlay = !_autoPlay;
+                      }),
+                  iconData: _autoPlay ? Icons.autorenew : Icons.pause,
+                  title: _autoPlay ? "Disable autoplay" : "Enable autoplay",
+                ),
+                OptionItem(
+                  onTap:
+                      (_) => setState(() {
+                        _looping = !_looping;
+                      }),
+                  iconData: _looping ? Icons.repeat : Icons.repeat_one,
+                  title: _looping ? "Disable looping" : "Enable looping",
+                ),
+              ],
+        );
+        _isInitializing = false;
+      });
     } catch (e) {
       postNotification(context, "Failed to initialize player: $e");
+      setState(() => _isInitializing = false);
     }
   }
 
   void _checkVideoEnd() {
-    final isEnded = player.value.position >= player.value.duration;
-    if (isEnded && player.value.isInitialized && !player.value.isPlaying) {
+    final isEnded =
+        _videoPlayerController.value.position >=
+        _videoPlayerController.value.duration;
+    if (isEnded &&
+        _videoPlayerController.value.isInitialized &&
+        !_videoPlayerController.value.isPlaying) {
       Navigator.of(context).pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Chewie(controller: controller);
+    if (_isInitializing) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_chewieController == null) {
+      return const Center(child: Text("Không thể phát video"));
+    }
+
+    return Chewie(controller: _chewieController!);
   }
 
   @override
   void dispose() {
-    player.removeListener(_checkVideoEnd);
-    player.dispose();
-    controller.dispose();
+    _videoPlayerController.removeListener(_checkVideoEnd);
+    _videoPlayerController.dispose();
+    _chewieController?.dispose();
     super.dispose();
   }
 }
