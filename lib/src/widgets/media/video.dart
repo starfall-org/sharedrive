@@ -1,9 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:chewie/chewie.dart';
-import 'package:video_player/video_player.dart';
-
-import '../../common/notification.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
   final Uint8List videoData;
@@ -15,48 +13,30 @@ class VideoPlayerWidget extends StatefulWidget {
 }
 
 class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
-  late VideoPlayerController _videoPlayerController;
-  ChewieController? _chewieController;
+  late final player = Player();
+  late final controller = VideoController(player);
 
   @override
   void initState() {
     super.initState();
-    _initializePlayer();
-  }
-
-  Future<void> _initializePlayer() async {
-    try {
-      _videoPlayerController = VideoPlayerController.contentUri(
-        Uri.dataFromBytes(widget.videoData),
-      );
-
-      if (!mounted) return;
-      await _videoPlayerController.initialize();
-
-      setState(() {
-        _chewieController = ChewieController(
-          videoPlayerController: _videoPlayerController,
-          aspectRatio:
-              _videoPlayerController.value.aspectRatio > 0
-                  ? _videoPlayerController.value.aspectRatio
-                  : 9 / 16,
-          showControls: true,
-        );
-      });
-    } catch (e) {
-      postNotification(context, "Failed to initialize player: $e");
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Chewie(controller: _chewieController!);
+    Uri uri = Uri.dataFromBytes(widget.videoData);
+    player.open(Media(uri.toString()));
   }
 
   @override
   void dispose() {
-    _videoPlayerController.dispose();
-    _chewieController?.dispose();
+    player.dispose();
     super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.width * 9.0 / 16.0,
+        child: Video(controller: controller),
+      ),
+    );
   }
 }
