@@ -1,0 +1,46 @@
+version: 2.1
+
+executors:
+  flutter-executor:
+    docker:
+      - image: cirrusci/flutter:latest # Dùng image có sẵn cho Flutter
+    working_directory: ~/repo
+
+jobs:
+  flutter-analyze:
+    executor: flutter-executor
+    steps:
+      - checkout
+      - run:
+          name: Flutter Version
+          command: flutter --version
+      - run:
+          name: Run Flutter Analyze
+          command: flutter analyze
+
+  flutter-test:
+    executor: flutter-executor
+    steps:
+      - checkout
+      - run:
+          name: Run Flutter Tests
+          command: flutter test
+
+  flutter-build-apk:
+    executor: flutter-executor
+    steps:
+      - checkout
+      - run:
+          name: Get Flutter Dependencies
+          command: flutter pub get
+      - run:
+          name: Build APK
+          command: flutter build apk --split-per-abi
+
+workflows:
+  version: 2
+  flutter-ci:
+    jobs:
+      - flutter-analyze
+      - flutter-test
+      - flutter-build-apk
