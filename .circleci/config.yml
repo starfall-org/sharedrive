@@ -1,46 +1,40 @@
 version: 2.1
 
-executors:
-  flutter-executor:
-    docker:
-      - image: cirrusci/flutter:latest # Dùng image có sẵn cho Flutter
-    working_directory: ~/repo
+orbs:
+  flutter: circleci/flutter@1.1
 
 jobs:
-  flutter-analyze:
-    executor: flutter-executor
+  build_android:
+    docker:
+      - image: cimg/android:2023.08
+    environment:
+      JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
+      FLUTTER_HOME: /home/circleci/flutter
     steps:
       - checkout
+      - flutter/install_sdk:
+          version: 3.19.0
       - run:
-          name: Flutter Version
-          command: flutter --version
+          name: Flutter doctor
+          command: flutter doctor -v
       - run:
-          name: Run Flutter Analyze
-          command: flutter analyze
-
-  flutter-test:
-    executor: flutter-executor
-    steps:
-      - checkout
-      - run:
-          name: Run Flutter Tests
-          command: flutter test
-
-  flutter-build-apk:
-    executor: flutter-executor
-    steps:
-      - checkout
-      - run:
-          name: Get Flutter Dependencies
+          name: Install dependencies
           command: flutter pub get
       - run:
+          name: Flutter analyze
+          command: flutter analyze
+      - run:
+          name: Run tests
+          command: flutter test
+      - run:
           name: Build APK
-          command: flutter build apk --split-per-abi
+          command: flutter build apk --release --split-per-abi
+      - store_artifacts:
+          path: build/app/outputs/flutter-apk/app-release.apk
+          destination: app-release.apk
 
 workflows:
   version: 2
-  flutter-ci:
+  build_and_test:
     jobs:
-      - flutter-analyze
-      - flutter-test
-      - flutter-build-apk
+      - build_android
