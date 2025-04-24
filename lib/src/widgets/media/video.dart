@@ -74,10 +74,6 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (_chewieController == null) {
-      return const Center(child: Text("Không thể phát video"));
-    }
-
     return Chewie(controller: _chewieController!);
   }
 
