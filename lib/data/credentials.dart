@@ -6,10 +6,8 @@ class Credentials {
   static Future<String?> getSelected() async {
     final prefs = await SharedPreferences.getInstance();
     String? selectedClientEmail = prefs.getString("selected_client_email");
-    if (selectedClientEmail != null) {
-      return selectedClientEmail;
-    }
-    return null;
+    return selectedClientEmail;
+      return null;
   }
 
   static Future<void> setSelected(String clientEmail) async {

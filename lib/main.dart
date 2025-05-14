@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'src/app.dart';
-import 'src/common/permissions.dart';
+import 'app.dart';
+import 'common/permissions.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

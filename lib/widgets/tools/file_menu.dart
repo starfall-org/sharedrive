@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../widgets/dialogs/show_metadata.dart';
+import '../dialogs/show_metadata.dart';
 
 import '../../models/file_model.dart';
 import '../../services/gdrive.dart';
