@@ -3,7 +3,7 @@ import 'dart:io' as io;
 
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis_auth/googleapis_auth.dart';
-import 'package:letdrive/app/models/file_model.dart';
+import 'package:manydrive/app/models/file_model.dart';
 
 class GDrive {
   static final _instance = GDrive._internal();

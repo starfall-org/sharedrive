@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:letdrive/app/app.dart';
-import 'package:letdrive/app/common/permissions.dart';
+import 'package:manydrive/app/app.dart';
+import 'package:manydrive/app/common/permissions.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

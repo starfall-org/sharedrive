@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:letdrive/app/data/credentials.dart';
-import 'package:letdrive/app/widgets/dialogs/about.dart';
-import 'package:letdrive/app/widgets/dialogs/login.dart';
+import 'package:manydrive/app/data/credentials.dart';
+import 'package:manydrive/app/widgets/dialogs/about.dart';
+import 'package:manydrive/app/widgets/dialogs/login.dart';
 
 class SideMenu extends StatefulWidget {
   final Function(String) login;
@@ -12,6 +12,7 @@ class SideMenu extends StatefulWidget {
 
 class SideMenuState extends State<SideMenu> {
   String? selectedClientEmail;
+  List<Map> accountsData = [];
   List<String> accounts = [];
   @override
   void initState() {
@@ -23,9 +24,24 @@ class SideMenuState extends State<SideMenu> {
     selectedClientEmail = await Credentials.getSelected();
     List credList = await Credentials.list();
     setState(() {
+      accountsData = credList.cast<Map>();
       accounts =
           credList.map((cred) => cred['client_email'] as String).toList();
     });
+  }
+
+  // Helper function để trích xuất username từ email
+  String _extractUsername(String email) {
+    return email.split('@').first;
+  }
+
+  // Helper function để lấy project_id từ credential data
+  String _getProjectId(String clientEmail) {
+    final cred = accountsData.firstWhere(
+      (cred) => cred['client_email'] == clientEmail,
+      orElse: () => {},
+    );
+    return cred['project_id']?.toString() ?? 'Unknown Project';
   }
 
   void _addAccount(String clientEmail) async {
@@ -54,19 +70,45 @@ class SideMenuState extends State<SideMenu> {
             accountName: const Text("Service Account"),
             accountEmail: DropdownButton<String>(
               value: selectedClientEmail,
-              items:
-                  uniqueAccounts
-                      .map(
-                        (email) =>
-                            DropdownMenuItem(value: email, child: Text(email)),
-                      )
-                      .toList(),
+              items: uniqueAccounts
+                  .map(
+                    (email) => DropdownMenuItem(
+                      value: email,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _extractUsername(email),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            _getProjectId(email),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                  .toList(),
               onChanged: (value) {
                 setState(() {
                   Credentials.setSelected(value!);
                   widget.login(value);
                 });
               },
+              dropdownColor: Colors.blue.shade800,
+              style: const TextStyle(color: Colors.white),
+              underline: Container(
+                height: 2,
+                color: Colors.white70,
+              ),
             ),
             decoration: BoxDecoration(
               image: DecorationImage(

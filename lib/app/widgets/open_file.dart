@@ -3,9 +3,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:googleapis/drive/v3.dart';
-import 'package:letdrive/app/models/file_model.dart';
-import 'package:letdrive/app/widgets/media/audio.dart';
-import 'package:letdrive/app/widgets/media/video.dart';
+import 'package:manydrive/app/models/file_model.dart';
+import 'package:manydrive/app/widgets/media/audio.dart';
+import 'package:manydrive/app/widgets/media/video.dart';
 
 class OpenFile {
   final BuildContext context;

@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
-import 'package:letdrive/app/data/credentials.dart';
+import 'package:manydrive/app/data/credentials.dart';
 
 void showLoginDialog(BuildContext context, Function(String) login) {
   TextEditingController credController = TextEditingController();
