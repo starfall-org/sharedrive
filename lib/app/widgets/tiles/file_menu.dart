@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../widgets/dialogs/show_metadata.dart';
-
-import '../../models/file_model.dart';
-import '../../services/gdrive.dart';
+import 'package:letdrive/app/models/file_model.dart';
+import 'package:letdrive/app/services/gdrive.dart';
+import 'package:letdrive/app/widgets/dialogs/show_metadata.dart';
 
 class FileMenuWidget extends StatefulWidget {
   final FileModel fileModel;

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:googleapis/drive/v3.dart';
 
-import '../models/file_model.dart';
-import '../services/gdrive.dart';
-import 'tiles/file_menu.dart';
+import 'package:letdrive/app/models/file_model.dart';
+import 'package:letdrive/app/services/gdrive.dart';
+import 'package:letdrive/app/widgets/tiles/file_menu.dart';
 
 class FileListWidget extends StatefulWidget {
   final GDrive gds;

@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "org.starfall.sharedrive"
+    namespace = "org.starfall.manydrive"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

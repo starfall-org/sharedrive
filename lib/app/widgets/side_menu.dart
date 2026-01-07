@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-
-import '../data/credentials.dart';
-import '../widgets/dialogs/login.dart';
-import '../widgets/dialogs/about.dart';
+import 'package:letdrive/app/data/credentials.dart';
+import 'package:letdrive/app/widgets/dialogs/about.dart';
+import 'package:letdrive/app/widgets/dialogs/login.dart';
 
 class SideMenu extends StatefulWidget {
   final Function(String) login;

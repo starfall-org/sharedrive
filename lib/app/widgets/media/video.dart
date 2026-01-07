@@ -1,9 +1,9 @@
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
-import 'package:chewie/chewie.dart';
-import 'package:video_player/video_player.dart';
 
-import '../../common/notification.dart';
+import 'package:chewie/chewie.dart';
+import 'package:flutter/material.dart';
+import 'package:letdrive/app/common/notification.dart';
+import 'package:video_player/video_player.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
   final Uint8List videoData;

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:googleapis/drive/v3.dart';
 
-import '../../models/file_model.dart';
+import 'package:letdrive/app/models/file_model.dart';
 
 void showMetadataDialog(BuildContext context, FileModel fileModel) async {
   File file = fileModel.file;

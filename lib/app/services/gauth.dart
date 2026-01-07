@@ -1,6 +1,6 @@
 import 'package:googleapis_auth/auth_io.dart';
 
-import '../data/credentials.dart';
+import 'package:letdrive/app/data/credentials.dart';
 
 List<String> _scopes = ['https://www.googleapis.com/auth/drive'];
 

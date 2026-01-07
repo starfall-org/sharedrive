@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'src/app.dart';
-import 'src/common/permissions.dart';
+import 'package:letdrive/app/app.dart';
+import 'package:letdrive/app/common/permissions.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,7 +16,7 @@ class _Main extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Share Drive',
+      title: 'ManyDrive',
       home: Builder(
         builder: (context) {
           return App();

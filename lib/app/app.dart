@@ -1,19 +1,18 @@
-import 'package:flutter/material.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:flutter/material.dart';
 import 'package:googleapis_auth/googleapis_auth.dart';
-
-import 'common/themes/material.dart';
-import 'data/credentials.dart';
-import 'models/file_model.dart';
-import 'services/gauth.dart';
-import 'services/gdrive.dart';
-import 'widgets/actions/float_button.dart';
-import 'widgets/dialogs/login.dart';
-import 'widgets/file_list.dart';
-import 'widgets/navbars/bottom.dart';
-import 'widgets/open_file.dart';
-import 'widgets/side_menu.dart';
-import 'widgets/navbars/top.dart';
+import 'package:letdrive/app/common/themes/material.dart';
+import 'package:letdrive/app/data/credentials.dart';
+import 'package:letdrive/app/models/file_model.dart';
+import 'package:letdrive/app/services/gauth.dart';
+import 'package:letdrive/app/services/gdrive.dart';
+import 'package:letdrive/app/widgets/actions/float_button.dart';
+import 'package:letdrive/app/widgets/dialogs/login.dart';
+import 'package:letdrive/app/widgets/file_list.dart';
+import 'package:letdrive/app/widgets/navbars/bottom.dart';
+import 'package:letdrive/app/widgets/navbars/top.dart';
+import 'package:letdrive/app/widgets/open_file.dart';
+import 'package:letdrive/app/widgets/side_menu.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
