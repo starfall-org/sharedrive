@@ -48,6 +48,8 @@ dependencies:
   chewie: ^1.11.1
   video_player: ^2.9.5
   flutter_local_notifications: ^19.5.0
+  cached_network_image: ^3.4.1
+  flutter_cache_manager: ^3.4.1
 
 dev_dependencies:
   flutter_test:

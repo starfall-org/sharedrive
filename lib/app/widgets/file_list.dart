@@ -1,6 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:googleapis/drive/v3.dart';
-
 import 'package:manydrive/app/models/file_model.dart';
 import 'package:manydrive/app/services/gdrive.dart';
 import 'package:manydrive/app/widgets/tiles/file_menu.dart';
@@ -45,8 +45,31 @@ class _FileListState extends State<FileListWidget> {
             ? Icons.image
             : Icons.insert_drive_file;
 
+    // Build thumbnail or icon
+    Widget leadingWidget;
+    if (file.thumbnailLink != null && file.thumbnailLink!.isNotEmpty) {
+      leadingWidget = ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: CachedNetworkImage(
+          imageUrl: file.thumbnailLink!,
+          width: 40,
+          height: 40,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Container(
+            width: 40,
+            height: 40,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: Icon(fileIcon, size: 20),
+          ),
+          errorWidget: (context, url, error) => Icon(fileIcon),
+        ),
+      );
+    } else {
+      leadingWidget = Icon(fileIcon);
+    }
+
     return ListTile(
-      leading: Icon(fileIcon),
+      leading: leadingWidget,
       trailing: FileMenuWidget(fileModel: fileModel, gds: widget.gds),
       title: Text(file.name ?? 'Unnamed file'),
       onTap: () => {widget.open(fileModel)},
