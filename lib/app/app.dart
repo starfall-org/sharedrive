@@ -62,14 +62,27 @@ class AppState extends State<App> {
   void _onItemTapped(int index) {
     if (_selectedIndex != index) {
       if (index == 0) {
+        // Reset pathHistory khi chuyển về tab Home
+        gds.pathHistory.clear();
         gds.ls();
       } else {
+        // Tab "Shared with me" sẽ tự reset pathHistory trong ls()
         gds.ls(sharedWithMe: true);
       }
       setState(() {
         _selectedIndex = index;
       });
     }
+  }
+
+  Future<bool> _onWillPop() async {
+    // Nếu đang ở trong thư mục con, quay lại thư mục cha
+    if (gds.pathHistory.isNotEmpty && gds.pathHistory.last != 'shared') {
+      gds.rollback();
+      return false; // Không thoát ứng dụng
+    }
+    // Nếu đang ở thư mục gốc, thoát ứng dụng
+    return true;
   }
 
   @override
@@ -80,22 +93,33 @@ class AppState extends State<App> {
           theme: lightTheme(lightDynamic),
           darkTheme: darkTheme(darkDynamic),
           themeMode: ThemeMode.system,
-          home: SafeArea(
-            child: Scaffold(
-              drawer: SideMenu(login: _login),
+          home: PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (bool didPop, Object? result) async {
+              if (didPop) return;
+              
+              final bool shouldPop = await _onWillPop();
+              if (shouldPop) {
+                Navigator.of(context).pop();
+              }
+            },
+            child: SafeArea(
+              child: Scaffold(
+                drawer: SideMenu(login: _login),
 
-              appBar: TopBarWidget(
-                screen: _selectedIndex == 0 ? 'Home' : 'Shared with me',
+                appBar: TopBarWidget(
+                  screen: _selectedIndex == 0 ? 'Home' : 'Shared with me',
+                ),
+
+                body: FileListWidget(gds: gds, open: _onOpen),
+
+                bottomNavigationBar: BottomBarWidget(
+                  selectedIndex: _selectedIndex,
+                  onItemTapped: _onItemTapped,
+                ),
+
+                floatingActionButton: FloatButtons(gds: gds),
               ),
-
-              body: FileListWidget(gds: gds, open: _onOpen),
-
-              bottomNavigationBar: BottomBarWidget(
-                selectedIndex: _selectedIndex,
-                onItemTapped: _onItemTapped,
-              ),
-
-              floatingActionButton: FloatButtons(gds: gds),
             ),
           ),
         );

@@ -54,7 +54,11 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         );
       });
     } catch (e) {
-      postNotification(context, "Failed to initialize player: $e");
+      showErrorSnackBar(
+        context,
+        "Failed to initialize video player: $e",
+        duration: const Duration(seconds: 5),
+      );
     }
   }
 

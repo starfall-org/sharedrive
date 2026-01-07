@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:manydrive/app/common/notification.dart';
 import 'package:manydrive/app/models/file_model.dart';
 import 'package:manydrive/app/services/gdrive.dart';
+import 'package:manydrive/app/services/notification_service.dart';
 import 'package:manydrive/app/widgets/dialogs/show_metadata.dart';
 
 class FileMenuWidget extends StatefulWidget {
@@ -29,8 +31,10 @@ class _FileMenuState extends State<FileMenuWidget> {
     try {
       showMetadataDialog(context, widget.fileModel);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error getting file metadata: $e')),
+      showErrorSnackBar(
+        context,
+        'Error getting file metadata: $e',
+        duration: const Duration(seconds: 5),
       );
     }
   }
@@ -38,24 +42,44 @@ class _FileMenuState extends State<FileMenuWidget> {
   void _delete() {
     try {
       widget.fileModel.delete();
-      ScaffoldMessenger.of(
+      showSuccessSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text('File deleted successfully')));
+        'File deleted successfully',
+      );
       widget.gds.refresh();
     } catch (e) {
-      ScaffoldMessenger.of(
+      showErrorSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error deleting file: $e')));
+        'Error deleting file: $e',
+        duration: const Duration(seconds: 5),
+      );
     }
   }
 
-  void _download() {
+  void _download() async {
     try {
-      widget.fileModel.download();
+      // Show SnackBar for immediate feedback
+      showSnackBar(context, 'Starting download...', type: SnackBarType.info);
+      
+      // Perform download
+      await widget.fileModel.download();
+      
+      // Show app notification when complete
+      await NotificationService().showDownloadComplete(
+        fileName: widget.fileModel.file.name ?? 'file',
+        filePath: '/downloads/${widget.fileModel.file.name}',
+      );
     } catch (e) {
-      ScaffoldMessenger.of(
+      showErrorSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error downloading file: $e')));
+        'Error downloading file: $e',
+        duration: const Duration(seconds: 5),
+      );
+      
+      await NotificationService().showError(
+        title: 'Download Failed',
+        message: 'Could not download ${widget.fileModel.file.name}',
+      );
     }
   }
 }

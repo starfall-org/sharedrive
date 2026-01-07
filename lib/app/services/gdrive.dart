@@ -40,21 +40,30 @@ class GDrive {
 
       if (folderId == null && !sharedWithMe && !trashed) {
         conditions.add("'root' in parents");
+        keyName = 'root';
+        // Không thêm vào pathHistory nếu đang về root
       } else if (folderId != null) {
         conditions.add("'$folderId' in parents");
         keyName = folderId;
-        pathHistory.add(folderId);
+        // Chỉ thêm vào pathHistory nếu chưa có hoặc khác với path cuối cùng
+        if (pathHistory.isEmpty || pathHistory.last != folderId) {
+          pathHistory.add(folderId);
+        }
       }
 
       if (sharedWithMe) {
         conditions.add("sharedWithMe = true");
         keyName = 'shared';
+        // Reset pathHistory khi chuyển sang tab "Shared with me"
+        pathHistory.clear();
         pathHistory.add('shared');
       }
 
       if (trashed) {
         conditions.add("trashed = true");
         keyName = 'trashed';
+        // Reset pathHistory khi chuyển sang tab "Trashed"
+        pathHistory.clear();
         pathHistory.add('trashed');
       }
 
@@ -82,9 +91,16 @@ class GDrive {
     if (pathHistory.isNotEmpty) {
       pathHistory.removeLast();
       if (pathHistory.isNotEmpty) {
-        await ls(folderId: pathHistory.last);
+        String lastPath = pathHistory.last;
+        if (lastPath == 'shared') {
+          await ls(sharedWithMe: true);
+        } else if (lastPath == 'trashed') {
+          await ls(trashed: true);
+        } else {
+          await ls(folderId: lastPath);
+        }
       } else {
-        await ls();
+        await ls(); // Quay về thư mục gốc
       }
     }
   }
