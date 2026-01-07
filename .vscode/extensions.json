@@ -1,8 +1,0 @@
-{
-    "recommendations": [
-        "dart-code.flutter",
-        "ms-azuretools.vscode-docker",
-        "vscjava.vscode-gradle",
-        "dbaeumer.vscode-eslint"
-    ]
-}
