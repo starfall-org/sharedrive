@@ -1,5 +1,6 @@
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:googleapis_auth/googleapis_auth.dart';
 import 'package:manydrive/app/common/themes/material.dart';
 import 'package:manydrive/app/data/credentials.dart';
@@ -98,7 +99,8 @@ class AppState extends State<App> {
       return false; // Không thoát ứng dụng
     }
     // Nếu đang ở thư mục gốc, thoát ứng dụng
-    return true;
+    SystemNavigator.pop();
+    return false;
   }
 
   @override
@@ -113,11 +115,7 @@ class AppState extends State<App> {
             canPop: false,
             onPopInvokedWithResult: (bool didPop, Object? result) async {
               if (didPop) return;
-              
-              final bool shouldPop = await _onWillPop();
-              if (shouldPop) {
-                Navigator.of(context).pop();
-              }
+              await _onWillPop();
             },
             child: StreamBuilder<List<FileModel>>(
               stream: gds.getFilesListStream(_selectedIndex == 0 ? 'home' : 'shared'),
