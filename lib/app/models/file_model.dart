@@ -14,17 +14,29 @@ class FileModel {
 
   Future metadata({String additionalFields = ''}) async {}
 
-  Future<io.File?> download() async {
+  Future<io.File?> download({Function(int)? onProgress}) async {
     try {
       var media = await driveApi.files.get(
         file.id!,
         downloadOptions: drive.DownloadOptions.fullMedia,
       );
       if (media is drive.Media) {
-        Uint8List bytes = await media.stream.fold<Uint8List>(
-          Uint8List(0),
-          (previous, element) => Uint8List.fromList([...previous, ...element]),
-        );
+        final List<int> buffer = [];
+        int totalBytes = 0;
+        final fileSize = file.size != null ? int.tryParse(file.size!) ?? 0 : 0;
+        
+        await for (var chunk in media.stream) {
+          buffer.addAll(chunk);
+          totalBytes += chunk.length;
+          
+          // Report progress
+          if (onProgress != null && fileSize > 0) {
+            final progress = ((totalBytes / fileSize) * 100).round();
+            onProgress(progress);
+          }
+        }
+        
+        Uint8List bytes = Uint8List.fromList(buffer);
 
         final directory =
             await getDownloadsDirectory() ??

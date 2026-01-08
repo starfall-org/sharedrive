@@ -10,9 +10,14 @@ import 'package:manydrive/app/widgets/media/video.dart';
 class OpenFile {
   final BuildContext context;
   final FileModel fileModel;
+  final List<FileModel>? allFiles;
   late File file;
 
-  OpenFile({required this.context, required this.fileModel}) {
+  OpenFile({
+    required this.context,
+    required this.fileModel,
+    this.allFiles,
+  }) {
     file = fileModel.file;
   }
 
@@ -35,21 +40,34 @@ class OpenFile {
       MaterialPageRoute(
         builder:
             (context) => Scaffold(
+              backgroundColor: Colors.black,
               body: FutureBuilder<Uint8List>(
                 future: fileModel.getBytes(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                      ),
+                    );
                   } else if (snapshot.hasError) {
                     return Center(
-                      child: Text('Error loading image: ${snapshot.error}'),
+                      child: Text(
+                        'Error loading image: ${snapshot.error}',
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     );
                   } else if (snapshot.hasData) {
                     return Center(
                       child: Image.memory(snapshot.data ?? Uint8List(0)),
                     );
                   } else {
-                    return const Center(child: Text('Failed to load image'));
+                    return const Center(
+                      child: Text(
+                        'Failed to load image',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    );
                   }
                 },
               ),
@@ -62,27 +80,10 @@ class OpenFile {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder:
-            (context) => Scaffold(
-              body: FutureBuilder<Uint8List>(
-                future: fileModel.getBytes(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(
-                      child: Text('Error loading video: ${snapshot.error}'),
-                    );
-                  } else if (snapshot.hasData) {
-                    return VideoPlayerWidget(
-                      videoData: snapshot.data ?? Uint8List(0),
-                    );
-                  } else {
-                    return const Center(child: Text('Failed to load video'));
-                  }
-                },
-              ),
-            ),
+        builder: (context) => VideoPlayerWidget(
+          fileModel: fileModel,
+          allFiles: allFiles,
+        ),
       ),
     );
   }
@@ -93,21 +94,34 @@ class OpenFile {
       MaterialPageRoute(
         builder:
             (context) => Scaffold(
+              backgroundColor: Colors.black,
               body: FutureBuilder<Uint8List>(
                 future: fileModel.getBytes(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                      ),
+                    );
                   } else if (snapshot.hasError) {
                     return Center(
-                      child: Text('Error loading audio: ${snapshot.error}'),
+                      child: Text(
+                        'Error loading audio: ${snapshot.error}',
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     );
                   } else if (snapshot.hasData) {
                     return AudioPlayerWidget(
                       audioData: snapshot.data ?? Uint8List(0),
                     );
                   } else {
-                    return const Center(child: Text('Failed to load audio'));
+                    return const Center(
+                      child: Text(
+                        'Failed to load audio',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    );
                   }
                 },
               ),

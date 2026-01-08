@@ -11,15 +11,26 @@ class GDrive {
   static final _instance = GDrive._internal();
   static GDrive get instance => _instance;
 
-  final _filesListController = StreamController<List<FileModel>>.broadcast();
-  Stream<List<FileModel>> get filesListStream => _filesListController.stream;
+  // Mỗi tab có stream riêng
+  final Map<String, StreamController<List<FileModel>>> _filesListControllers = {};
+  
+  Stream<List<FileModel>> getFilesListStream(String tabKey) {
+    if (!_filesListControllers.containsKey(tabKey)) {
+      _filesListControllers[tabKey] = StreamController<List<FileModel>>.broadcast();
+    }
+    return _filesListControllers[tabKey]!.stream;
+  }
 
   bool isLoggedIn = false;
   late drive.DriveApi _driveApi;
   final Map<String, List<FileModel>> _cachedFiles = {};
-  String currentQuery = "'root' in parents";
-  String keyName = 'root';
-  final List<String> pathHistory = [];
+  
+  // Mỗi tab có pathHistory riêng
+  final Map<String, List<String>> _pathHistories = {};
+  
+  List<String> getPathHistory(String tabKey) {
+    return _pathHistories[tabKey] ?? [];
+  }
 
   GDrive._internal();
 
@@ -32,55 +43,63 @@ class GDrive {
     String? folderId,
     bool sharedWithMe = false,
     bool trashed = false,
+    required String tabKey,
   }) async {
     if (!isLoggedIn) {
       return;
     }
 
+    // Khởi tạo pathHistory cho tab nếu chưa có
+    if (!_pathHistories.containsKey(tabKey)) {
+      _pathHistories[tabKey] = [];
+    }
+
+    // Khởi tạo stream controller cho tab nếu chưa có
+    if (!_filesListControllers.containsKey(tabKey)) {
+      _filesListControllers[tabKey] = StreamController<List<FileModel>>.broadcast();
+    }
+
     try {
       List<String> conditions = [];
+      String keyName;
 
       if (folderId == null && !sharedWithMe && !trashed) {
         conditions.add("'root' in parents");
-        keyName = 'root';
-        // Không thêm vào pathHistory nếu đang về root
+        keyName = '${tabKey}_root';
+        // Reset pathHistory khi về root
+        _pathHistories[tabKey] = [];
       } else if (folderId != null) {
         conditions.add("'$folderId' in parents");
-        keyName = folderId;
+        keyName = '${tabKey}_$folderId';
         // Chỉ thêm vào pathHistory nếu chưa có hoặc khác với path cuối cùng
-        if (pathHistory.isEmpty || pathHistory.last != folderId) {
-          pathHistory.add(folderId);
+        if (_pathHistories[tabKey]!.isEmpty || _pathHistories[tabKey]!.last != folderId) {
+          _pathHistories[tabKey]!.add(folderId);
         }
-      }
-
-      if (sharedWithMe) {
+      } else if (sharedWithMe) {
         conditions.add("sharedWithMe = true");
-        keyName = 'shared';
-        // Reset pathHistory khi chuyển sang tab "Shared with me"
-        pathHistory.clear();
-        pathHistory.add('shared');
-      }
-
-      if (trashed) {
+        keyName = '${tabKey}_shared';
+        // Reset pathHistory cho tab shared
+        _pathHistories[tabKey] = [];
+      } else {
         conditions.add("trashed = true");
-        keyName = 'trashed';
-        // Reset pathHistory khi chuyển sang tab "Trashed"
-        pathHistory.clear();
-        pathHistory.add('trashed');
+        keyName = '${tabKey}_trashed';
+        // Reset pathHistory cho tab trashed
+        _pathHistories[tabKey] = [];
       }
 
       String query = conditions.join(" and ");
-      currentQuery = query;
 
-      _filesListController.add(_cachedFiles[keyName] ??= []);
+      // Emit cached data first
+      _filesListControllers[tabKey]!.add(_cachedFiles[keyName] ?? []);
 
-      // Load from cache first (offline support)
+      // Load from persistent cache (offline support)
       final cachedData = await _loadCachedFileList(keyName);
       if (cachedData != null) {
         _cachedFiles[keyName] = cachedData;
-        _filesListController.add(cachedData);
+        _filesListControllers[tabKey]!.add(cachedData);
       }
 
+      // Fetch from API
       var response = await _driveApi.files.list(
         q: query.isNotEmpty ? query : null,
         $fields: 'files(id,name,mimeType,size,createdTime,modifiedTime,thumbnailLink,iconLink,webContentLink,webViewLink,description)',
@@ -91,68 +110,118 @@ class GDrive {
       }
 
       _cachedFiles[keyName] = files;
-      _filesListController.add(files);
+      _filesListControllers[tabKey]!.add(files);
       
       // Save to persistent cache
       await _saveCachedFileList(keyName, files);
     } catch (e) {
       // If offline, use cached data
+      String keyName = folderId != null 
+          ? '${tabKey}_$folderId' 
+          : sharedWithMe 
+              ? '${tabKey}_shared' 
+              : trashed 
+                  ? '${tabKey}_trashed' 
+                  : '${tabKey}_root';
+      
       final cachedData = await _loadCachedFileList(keyName);
       if (cachedData != null) {
         _cachedFiles[keyName] = cachedData;
-        _filesListController.add(cachedData);
+        _filesListControllers[tabKey]!.add(cachedData);
       } else {
         throw Exception('Failed to list files: $e');
       }
     }
   }
 
-  Future<void> rollback() async {
-    if (pathHistory.isNotEmpty) {
-      pathHistory.removeLast();
-      if (pathHistory.isNotEmpty) {
-        String lastPath = pathHistory.last;
-        if (lastPath == 'shared') {
-          await ls(sharedWithMe: true);
-        } else if (lastPath == 'trashed') {
-          await ls(trashed: true);
-        } else {
-          await ls(folderId: lastPath);
-        }
+  Future<void> rollback(String tabKey) async {
+    if (!_pathHistories.containsKey(tabKey) || _pathHistories[tabKey]!.isEmpty) {
+      return;
+    }
+
+    _pathHistories[tabKey]!.removeLast();
+    
+    if (_pathHistories[tabKey]!.isNotEmpty) {
+      String lastPath = _pathHistories[tabKey]!.last;
+      await ls(folderId: lastPath, tabKey: tabKey);
+    } else {
+      // Quay về root hoặc shared tùy theo tab
+      if (tabKey == 'shared') {
+        await ls(sharedWithMe: true, tabKey: tabKey);
       } else {
-        await ls(); // Quay về thư mục gốc
+        await ls(tabKey: tabKey);
       }
     }
   }
 
-  Future<void> refresh() async {
-    var response = await _driveApi.files.list(q: currentQuery);
-    List<FileModel> files = [];
-    for (var file in response.files ?? []) {
-      files.add(FileModel(driveApi: _driveApi, file: file));
+  Future<void> refresh(String tabKey) async {
+    // Lấy pathHistory của tab hiện tại
+    final pathHistory = _pathHistories[tabKey] ?? [];
+    
+    if (pathHistory.isEmpty) {
+      // Refresh root hoặc shared tùy theo tab
+      if (tabKey == 'shared') {
+        await ls(sharedWithMe: true, tabKey: tabKey);
+      } else {
+        await ls(tabKey: tabKey);
+      }
+    } else {
+      // Refresh thư mục hiện tại
+      String currentPath = pathHistory.last;
+      await ls(folderId: currentPath, tabKey: tabKey);
     }
-
-    _cachedFiles[keyName] = files;
-    _filesListController.add(files);
   }
 
-  Future<void> upload(String filePath) async {
+  Future<void> upload(
+    String filePath,
+    String tabKey, {
+    Function(int)? onProgress,
+  }) async {
     try {
       io.File file = io.File(filePath);
-      var media = drive.Media(file.openRead(), file.lengthSync());
+      final fileSize = await file.length();
+      
+      // Tạo stream với progress tracking
+      Stream<List<int>> progressStream = file.openRead().transform(
+        StreamTransformer.fromHandlers(
+          handleData: (data, sink) {
+            sink.add(data);
+            if (onProgress != null) {
+              // Tính progress (đơn giản hóa, không chính xác 100%)
+              onProgress(data.length);
+            }
+          },
+        ),
+      );
+      
+      var media = drive.Media(progressStream, fileSize);
       var driveFile = drive.File()..name = file.uri.pathSegments.last;
+      
+      // Lấy thư mục hiện tại của tab
+      final pathHistory = _pathHistories[tabKey] ?? [];
+      if (pathHistory.isNotEmpty) {
+        driveFile.parents = [pathHistory.last];
+      }
+      
       await _driveApi.files.create(driveFile, uploadMedia: media);
     } catch (e) {
       throw Exception('Failed to upload file: $e');
     }
   }
 
-  Future<void> mkdir(String folderName) async {
+  Future<void> mkdir(String folderName, String tabKey) async {
     try {
       var driveFile =
           drive.File()
             ..name = folderName
             ..mimeType = 'application/vnd.google-apps.folder';
+      
+      // Lấy thư mục hiện tại của tab
+      final pathHistory = _pathHistories[tabKey] ?? [];
+      if (pathHistory.isNotEmpty) {
+        driveFile.parents = [pathHistory.last];
+      }
+      
       await _driveApi.files.create(driveFile);
     } catch (e) {
       throw Exception('Failed to create folder: $e');

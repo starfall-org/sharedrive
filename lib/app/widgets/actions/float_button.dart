@@ -2,11 +2,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import 'package:manydrive/app/services/gdrive.dart';
+import 'package:manydrive/app/services/notification_service.dart';
 
 class FloatButtons extends StatefulWidget {
   final GDrive gds;
+  final String tabKey;
 
-  const FloatButtons({super.key, required this.gds});
+  const FloatButtons({super.key, required this.gds, required this.tabKey});
 
   @override
   State<FloatButtons> createState() => _FloatButtonsState();
@@ -18,8 +20,63 @@ class _FloatButtonsState extends State<FloatButtons> {
     if (result != null) {
       String filePath = result.files.single.path ?? '';
       if (filePath.isNotEmpty) {
-        await widget.gds.upload(filePath);
-        widget.gds.refresh();
+        final notificationService = NotificationService();
+        final notificationId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+        final fileName = result.files.single.name;
+        final fileSize = result.files.single.size;
+        
+        try {
+          // Initialize notification service
+          await notificationService.initialize();
+          
+          // Show starting notification
+          await notificationService.showProgress(
+            id: notificationId,
+            title: 'Uploading',
+            body: fileName,
+            progress: 0,
+            maxProgress: 100,
+          );
+          
+          int uploadedBytes = 0;
+          
+          // Perform upload with progress
+          await widget.gds.upload(
+            filePath,
+            widget.tabKey,
+            onProgress: (bytes) async {
+              uploadedBytes += bytes;
+              final progress = ((uploadedBytes / fileSize) * 100).round();
+              await notificationService.showProgress(
+                id: notificationId,
+                title: 'Uploading',
+                body: fileName,
+                progress: progress,
+                maxProgress: 100,
+              );
+            },
+          );
+          
+          // Cancel progress notification
+          await notificationService.cancel(notificationId);
+          
+          // Show completion notification
+          await notificationService.showUploadComplete(
+            fileName: fileName,
+          );
+          
+          // Refresh file list
+          widget.gds.refresh(widget.tabKey);
+        } catch (e) {
+          // Cancel progress notification
+          await notificationService.cancel(notificationId);
+          
+          // Show error notification
+          await notificationService.showError(
+            title: 'Upload Failed',
+            message: 'Could not upload $fileName',
+          );
+        }
       }
     }
   }
@@ -43,8 +100,8 @@ class _FloatButtonsState extends State<FloatButtons> {
             TextButton(
               onPressed: () async {
                 if (folderController.text.isNotEmpty) {
-                  await widget.gds.mkdir(folderController.text);
-                  widget.gds.refresh();
+                  await widget.gds.mkdir(folderController.text, widget.tabKey);
+                  widget.gds.refresh(widget.tabKey);
                   Navigator.pop(context);
                 }
               },

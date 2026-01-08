@@ -24,17 +24,27 @@ class App extends StatefulWidget {
 class AppState extends State<App> {
   int _selectedIndex = 0;
   late final GDrive gds;
+  late final PageController _pageController;
+  final GlobalKey<FileListWidgetState> _homeFileListKey = GlobalKey<FileListWidgetState>();
+  final GlobalKey<FileListWidgetState> _sharedFileListKey = GlobalKey<FileListWidgetState>();
 
   @override
   void initState() {
     super.initState();
     gds = GDrive.instance;
+    _pageController = PageController(initialPage: 0);
     _initialize();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _login(String clientEmail) async {
     AuthClient? authClient = await gauthClient(clientEmail);
-    gds.login(authClient!);
+    await gds.login(authClient!);
   }
 
   Future<void> _initialize() async {
@@ -47,38 +57,36 @@ class AppState extends State<App> {
       selectedClientEmail = credList.first['client_email'];
       Credentials.setSelected(selectedClientEmail!);
     }
-    _login(selectedClientEmail);
-    gds.ls();
+    await _login(selectedClientEmail);
   }
 
-  void _onOpen(FileModel fileModel) {
+  void _onOpen(FileModel fileModel, String tabKey, List<FileModel> allFiles) {
     if (fileModel.file.mimeType == 'application/vnd.google-apps.folder') {
-      gds.ls(folderId: fileModel.file.id);
+      gds.ls(folderId: fileModel.file.id, tabKey: tabKey);
     } else {
-      OpenFile(context: context, fileModel: fileModel).open();
+      OpenFile(
+        context: context,
+        fileModel: fileModel,
+        allFiles: allFiles,
+      ).open();
     }
   }
 
   void _onItemTapped(int index) {
-    if (_selectedIndex != index) {
-      if (index == 0) {
-        // Reset pathHistory khi chuyển về tab Home
-        gds.pathHistory.clear();
-        gds.ls();
-      } else {
-        // Tab "Shared with me" sẽ tự reset pathHistory trong ls()
-        gds.ls(sharedWithMe: true);
-      }
-      setState(() {
-        _selectedIndex = index;
-      });
-    }
+    setState(() {
+      _selectedIndex = index;
+      _pageController.jumpToPage(index);
+    });
   }
 
   Future<bool> _onWillPop() async {
+    // Kiểm tra pathHistory của tab hiện tại
+    final currentTabKey = _selectedIndex == 0 ? 'home' : 'shared';
+    final currentHistory = gds.getPathHistory(currentTabKey);
+    
     // Nếu đang ở trong thư mục con, quay lại thư mục cha
-    if (gds.pathHistory.isNotEmpty && gds.pathHistory.last != 'shared') {
-      gds.rollback();
+    if (currentHistory.isNotEmpty) {
+      gds.rollback(currentTabKey);
       return false; // Không thoát ứng dụng
     }
     // Nếu đang ở thư mục gốc, thoát ứng dụng
@@ -103,23 +111,66 @@ class AppState extends State<App> {
                 Navigator.of(context).pop();
               }
             },
-            child: SafeArea(
-              child: Scaffold(
-                drawer: SideMenu(login: _login),
+            child: StreamBuilder<List<FileModel>>(
+              stream: gds.getFilesListStream(_selectedIndex == 0 ? 'home' : 'shared'),
+              builder: (context, snapshot) {
+                final currentTabKey = _selectedIndex == 0 ? 'home' : 'shared';
+                final pathHistory = gds.getPathHistory(currentTabKey);
+                final hasHistory = pathHistory.isNotEmpty;
 
-                appBar: TopBarWidget(
-                  screen: _selectedIndex == 0 ? 'Home' : 'Shared with me',
-                ),
+                return Scaffold(
+                  drawer: SideMenu(login: _login),
 
-                body: FileListWidget(gds: gds, open: _onOpen),
+                  appBar: TopBarWidget(
+                    screen: _selectedIndex == 0 ? 'Home' : 'Shared with me',
+                    onSortPressed: () {
+                      if (_selectedIndex == 0) {
+                        _homeFileListKey.currentState?.showSortMenu();
+                      } else {
+                        _sharedFileListKey.currentState?.showSortMenu();
+                      }
+                    },
+                    onBackPressed: hasHistory
+                        ? () => gds.rollback(currentTabKey)
+                        : null,
+                  ),
 
-                bottomNavigationBar: BottomBarWidget(
-                  selectedIndex: _selectedIndex,
-                  onItemTapped: _onItemTapped,
-                ),
+                  body: PageView(
+                    controller: _pageController,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _selectedIndex = index;
+                      });
+                    },
+                    children: [
+                      FileListWidget(
+                        key: _homeFileListKey,
+                        gds: gds,
+                        open: (fileModel, allFiles) => _onOpen(fileModel, 'home', allFiles),
+                        tabKey: 'home',
+                        isSharedWithMe: false,
+                      ),
+                      FileListWidget(
+                        key: _sharedFileListKey,
+                        gds: gds,
+                        open: (fileModel, allFiles) => _onOpen(fileModel, 'shared', allFiles),
+                        tabKey: 'shared',
+                        isSharedWithMe: true,
+                      ),
+                    ],
+                  ),
 
-                floatingActionButton: FloatButtons(gds: gds),
-              ),
+                  bottomNavigationBar: BottomBarWidget(
+                    selectedIndex: _selectedIndex,
+                    onItemTapped: _onItemTapped,
+                  ),
+
+                  floatingActionButton: FloatButtons(
+                    gds: gds,
+                    tabKey: _selectedIndex == 0 ? 'home' : 'shared',
+                  ),
+                );
+              },
             ),
           ),
         );

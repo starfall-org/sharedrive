@@ -8,8 +8,15 @@ import 'package:manydrive/app/widgets/dialogs/show_metadata.dart';
 class FileMenuWidget extends StatefulWidget {
   final FileModel fileModel;
   final GDrive gds;
+  final String tabKey;
 
-  const FileMenuWidget({super.key, required this.fileModel, required this.gds});
+  const FileMenuWidget({
+    super.key,
+    required this.fileModel,
+    required this.gds,
+    required this.tabKey,
+  });
+  
   @override
   State<FileMenuWidget> createState() => _FileMenuState();
 }
@@ -46,7 +53,7 @@ class _FileMenuState extends State<FileMenuWidget> {
         context,
         'File deleted successfully',
       );
-      widget.gds.refresh();
+      widget.gds.refresh(widget.tabKey);
     } catch (e) {
       showErrorSnackBar(
         context,
@@ -57,28 +64,52 @@ class _FileMenuState extends State<FileMenuWidget> {
   }
 
   void _download() async {
+    final notificationService = NotificationService();
+    final notificationId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final fileName = widget.fileModel.file.name ?? 'file';
+    
     try {
-      // Show SnackBar for immediate feedback
-      showSnackBar(context, 'Starting download...', type: SnackBarType.info);
+      // Initialize notification service
+      await notificationService.initialize();
+      
+      // Show starting notification
+      await notificationService.showProgress(
+        id: notificationId,
+        title: 'Downloading',
+        body: fileName,
+        progress: 0,
+        maxProgress: 100,
+      );
       
       // Perform download
-      await widget.fileModel.download();
+      final downloadedFile = await widget.fileModel.download(
+        onProgress: (progress) async {
+          await notificationService.showProgress(
+            id: notificationId,
+            title: 'Downloading',
+            body: fileName,
+            progress: progress,
+            maxProgress: 100,
+          );
+        },
+      );
       
-      // Show app notification when complete
-      await NotificationService().showDownloadComplete(
-        fileName: widget.fileModel.file.name ?? 'file',
-        filePath: '/downloads/${widget.fileModel.file.name}',
+      // Cancel progress notification
+      await notificationService.cancel(notificationId);
+      
+      // Show completion notification
+      await notificationService.showDownloadComplete(
+        fileName: fileName,
+        filePath: downloadedFile?.path ?? '/downloads/$fileName',
       );
     } catch (e) {
-      showErrorSnackBar(
-        context,
-        'Error downloading file: $e',
-        duration: const Duration(seconds: 5),
-      );
+      // Cancel progress notification
+      await notificationService.cancel(notificationId);
       
-      await NotificationService().showError(
+      // Show error notification
+      await notificationService.showError(
         title: 'Download Failed',
-        message: 'Could not download ${widget.fileModel.file.name}',
+        message: 'Could not download $fileName',
       );
     }
   }

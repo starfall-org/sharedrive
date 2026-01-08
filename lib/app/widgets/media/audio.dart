@@ -31,6 +31,14 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Playing audio...'));
+    return Container(
+      color: Colors.black,
+      child: const Center(
+        child: Text(
+          'Playing audio...',
+          style: TextStyle(color: Colors.white, fontSize: 18),
+        ),
+      ),
+    );
   }
 }
