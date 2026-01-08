@@ -24,7 +24,7 @@ class App extends StatefulWidget {
 
 class AppState extends State<App> {
   int _selectedIndex = 0;
-  int _themeModeIndex = 0; // 0: system, 1: light, 2: dark, 3: super dark
+  ThemeMode _themeMode = ThemeMode.system;
   bool _isSuperDarkMode = false;
   late final GDrive gds;
   late final PageController _pageController;
@@ -90,32 +90,16 @@ class AppState extends State<App> {
     });
   }
 
-  void _onThemeModeChanged(int index) {
+  void _onThemeModeChanged(ThemeMode mode) {
     setState(() {
-      _themeModeIndex = index;
-      _isSuperDarkMode = index == 3;
+      _themeMode = mode;
     });
   }
 
   void _toggleSuperDarkMode(bool value) {
     setState(() {
       _isSuperDarkMode = value;
-      if (value && _themeModeIndex != 3) {
-        _themeModeIndex = 3;
-      }
     });
-  }
-
-  ThemeMode get _currentThemeMode {
-    if (_themeModeIndex == 3) return ThemeMode.dark;
-    switch (_themeModeIndex) {
-      case 1:
-        return ThemeMode.light;
-      case 2:
-        return ThemeMode.dark;
-      default:
-        return ThemeMode.system;
-    }
   }
 
   Future<bool> _onWillPop() async {
@@ -139,8 +123,8 @@ class AppState extends State<App> {
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         return MaterialApp(
           theme: lightTheme(lightDynamic),
-          darkTheme: _isSuperDarkMode ? superDarkTheme() : darkTheme(darkDynamic),
-          themeMode: _currentThemeMode,
+          darkTheme: darkTheme(darkDynamic, superDark: _isSuperDarkMode),
+          themeMode: _themeMode,
           home: PopScope(
             canPop: false,
             onPopInvokedWithResult: (bool didPop, Object? result) async {
@@ -157,7 +141,7 @@ class AppState extends State<App> {
                 return Scaffold(
                   drawer: SideMenu(
                     login: _login,
-                    themeModeIndex: _themeModeIndex,
+                    themeMode: _themeMode,
                     onThemeModeChanged: _onThemeModeChanged,
                     isSuperDarkMode: _isSuperDarkMode,
                     onSuperDarkModeChanged: _toggleSuperDarkMode,

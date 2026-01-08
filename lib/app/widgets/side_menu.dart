@@ -5,14 +5,14 @@ import 'package:manydrive/app/widgets/dialogs/login.dart';
 
 class SideMenu extends StatefulWidget {
   final Function(String) login;
-  final int themeModeIndex;
-  final Function(int) onThemeModeChanged;
+  final ThemeMode themeMode;
+  final Function(ThemeMode) onThemeModeChanged;
   final bool isSuperDarkMode;
   final Function(bool) onSuperDarkModeChanged;
   const SideMenu({
     super.key,
     required this.login,
-    required this.themeModeIndex,
+    required this.themeMode,
     required this.onThemeModeChanged,
     required this.isSuperDarkMode,
     required this.onSuperDarkModeChanged,
@@ -65,6 +65,17 @@ class SideMenuState extends State<SideMenu> {
     });
   }
 
+  int get _themeModeIndex {
+    switch (widget.themeMode) {
+      case ThemeMode.light:
+        return 1;
+      case ThemeMode.dark:
+        return 2;
+      default:
+        return 0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Ensure accounts list has unique values
@@ -110,7 +121,7 @@ class SideMenuState extends State<SideMenu> {
                         ),
                       ),
                     )
-                    ,
+                    .toList(),
                 const DropdownMenuItem<String>(
                   value: '__add_account__',
                   child: Row(
@@ -186,9 +197,21 @@ class SideMenuState extends State<SideMenu> {
                         icon: Icon(Icons.dark_mode),
                       ),
                     ],
-                    selected: {widget.themeModeIndex},
+                    selected: {_themeModeIndex},
                     onSelectionChanged: (Set<int> newSelection) {
-                      widget.onThemeModeChanged(newSelection.first);
+                      final index = newSelection.first;
+                      ThemeMode mode;
+                      switch (index) {
+                        case 1:
+                          mode = ThemeMode.light;
+                          break;
+                        case 2:
+                          mode = ThemeMode.dark;
+                          break;
+                        default:
+                          mode = ThemeMode.system;
+                      }
+                      widget.onThemeModeChanged(mode);
                     },
                   ),
                 ),
@@ -213,7 +236,7 @@ class SideMenuState extends State<SideMenu> {
                         ),
                       ),
                       Text(
-                        "Enhanced dark theme",
+                        "Pure black background",
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey,

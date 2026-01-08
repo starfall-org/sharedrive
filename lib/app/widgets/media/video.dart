@@ -279,10 +279,13 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
               onPageChanged: _onPageChanged,
               itemCount: _videoFiles.length,
               itemBuilder: (context, index) {
-                return Center(
-                  child: _chewieControllers.containsKey(index)
-                      ? Chewie(controller: _chewieControllers[index]!)
-                      : const CircularProgressIndicator(color: Colors.white),
+                return Container(
+                  color: Colors.black,
+                  child: Center(
+                    child: _chewieControllers.containsKey(index)
+                        ? Chewie(controller: _chewieControllers[index]!)
+                        : const CircularProgressIndicator(color: Colors.white),
+                  ),
                 );
               },
             ),
