@@ -13,21 +13,10 @@ void showAbout(BuildContext context) {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text("Links:"),
-              ListTile(
-                leading: Icon(Icons.discord),
-                title: Text("Discord"),
-                onTap: () => _launchURL('https://discord.gg/tRJKfHFx'),
-              ),
               ListTile(
                 leading: Icon(Icons.code),
                 title: Text("GitHub"),
                 onTap: () => _launchURL('https://github.com/starfall-org'),
-              ),
-              ListTile(
-                leading: Icon(Icons.telegram),
-                title: Text("Telegram"),
-                onTap: () => _launchURL('https://contentdownload.t.me/'),
               ),
             ],
           ),

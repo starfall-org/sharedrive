@@ -52,6 +52,9 @@ class FileListWidgetState extends State<FileListWidget> with AutomaticKeepAliveC
     await Future.delayed(Duration.zero);
     if (!mounted) return;
     
+    // Chỉ load dữ liệu nếu đã đăng nhập thành công
+    if (!widget.gds.isLoggedIn) return;
+    
     if (widget.isSharedWithMe) {
       await widget.gds.ls(sharedWithMe: true, tabKey: widget.tabKey);
     } else {

@@ -24,6 +24,8 @@ class App extends StatefulWidget {
 
 class AppState extends State<App> {
   int _selectedIndex = 0;
+  int _themeModeIndex = 0; // 0: system, 1: light, 2: dark, 3: super dark
+  bool _isSuperDarkMode = false;
   late final GDrive gds;
   late final PageController _pageController;
   final GlobalKey<FileListWidgetState> _homeFileListKey = GlobalKey<FileListWidgetState>();
@@ -88,6 +90,34 @@ class AppState extends State<App> {
     });
   }
 
+  void _onThemeModeChanged(int index) {
+    setState(() {
+      _themeModeIndex = index;
+      _isSuperDarkMode = index == 3;
+    });
+  }
+
+  void _toggleSuperDarkMode(bool value) {
+    setState(() {
+      _isSuperDarkMode = value;
+      if (value && _themeModeIndex != 3) {
+        _themeModeIndex = 3;
+      }
+    });
+  }
+
+  ThemeMode get _currentThemeMode {
+    if (_themeModeIndex == 3) return ThemeMode.dark;
+    switch (_themeModeIndex) {
+      case 1:
+        return ThemeMode.light;
+      case 2:
+        return ThemeMode.dark;
+      default:
+        return ThemeMode.system;
+    }
+  }
+
   Future<bool> _onWillPop() async {
     // Kiểm tra pathHistory của tab hiện tại
     final currentTabKey = _selectedIndex == 0 ? 'home' : 'shared';
@@ -109,8 +139,8 @@ class AppState extends State<App> {
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         return MaterialApp(
           theme: lightTheme(lightDynamic),
-          darkTheme: darkTheme(darkDynamic),
-          themeMode: ThemeMode.system,
+          darkTheme: _isSuperDarkMode ? superDarkTheme() : darkTheme(darkDynamic),
+          themeMode: _currentThemeMode,
           home: PopScope(
             canPop: false,
             onPopInvokedWithResult: (bool didPop, Object? result) async {
@@ -125,7 +155,13 @@ class AppState extends State<App> {
                 final hasHistory = pathHistory.isNotEmpty;
 
                 return Scaffold(
-                  drawer: SideMenu(login: _login),
+                  drawer: SideMenu(
+                    login: _login,
+                    themeModeIndex: _themeModeIndex,
+                    onThemeModeChanged: _onThemeModeChanged,
+                    isSuperDarkMode: _isSuperDarkMode,
+                    onSuperDarkModeChanged: _toggleSuperDarkMode,
+                  ),
 
                   appBar: TopBarWidget(
                     screen: _selectedIndex == 0 ? 'Home' : 'Shared with me',

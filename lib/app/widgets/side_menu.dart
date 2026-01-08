@@ -5,7 +5,19 @@ import 'package:manydrive/app/widgets/dialogs/login.dart';
 
 class SideMenu extends StatefulWidget {
   final Function(String) login;
-  const SideMenu({super.key, required this.login});
+  final int themeModeIndex;
+  final Function(int) onThemeModeChanged;
+  final bool isSuperDarkMode;
+  final Function(bool) onSuperDarkModeChanged;
+  const SideMenu({
+    super.key,
+    required this.login,
+    required this.themeModeIndex,
+    required this.onThemeModeChanged,
+    required this.isSuperDarkMode,
+    required this.onSuperDarkModeChanged,
+  });
+
   @override
   SideMenuState createState() => SideMenuState();
 }
@@ -14,6 +26,7 @@ class SideMenuState extends State<SideMenu> {
   String? selectedClientEmail;
   List<Map> accountsData = [];
   List<String> accounts = [];
+
   @override
   void initState() {
     super.initState();
@@ -70,38 +83,59 @@ class SideMenuState extends State<SideMenu> {
             accountName: const Text("Service Account"),
             accountEmail: DropdownButton<String>(
               value: selectedClientEmail,
-              items: uniqueAccounts
-                  .map(
-                    (email) => DropdownMenuItem(
-                      value: email,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _extractUsername(email),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+              items: [
+                ...uniqueAccounts
+                    .map(
+                      (email) => DropdownMenuItem(
+                        value: email,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _extractUsername(email),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                          Text(
-                            _getProjectId(email),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.white70,
+                            Text(
+                              _getProjectId(email),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.white70,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  )
-                  .toList(),
+                    )
+                    ,
+                const DropdownMenuItem<String>(
+                  value: '__add_account__',
+                  child: Row(
+                    children: [
+                      Icon(Icons.add, color: Colors.white70, size: 18),
+                      SizedBox(width: 8),
+                      Text(
+                        'Add Account',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               onChanged: (value) {
-                setState(() {
-                  Credentials.setSelected(value!);
-                  widget.login(value);
-                });
+                if (value == '__add_account__') {
+                  showLoginDialog(context, (clientEmail) {
+                    _addAccount(clientEmail);
+                  });
+                } else if (value != null) {
+                  setState(() {
+                    Credentials.setSelected(value);
+                    widget.login(value);
+                  });
+                }
               },
               dropdownColor: Colors.blue.shade800,
               style: const TextStyle(color: Colors.white),
@@ -118,19 +152,89 @@ class SideMenuState extends State<SideMenu> {
             ),
           ),
 
-          ListTile(
-            leading: Icon(Icons.account_tree),
-            title: Text("Add Service Account"),
-            onTap: () {
-              showLoginDialog(context, (clientEmail) {
-                _addAccount(clientEmail);
-              });
-            },
+          // Theme Mode Segment Button
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Theme Mode",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<int>(
+                    segments: const [
+                      ButtonSegment<int>(
+                        value: 0,
+                        label: Text('Auto'),
+                        icon: Icon(Icons.auto_mode),
+                      ),
+                      ButtonSegment<int>(
+                        value: 1,
+                        label: Text('Light'),
+                        icon: Icon(Icons.light_mode),
+                      ),
+                      ButtonSegment<int>(
+                        value: 2,
+                        label: Text('Dark'),
+                        icon: Icon(Icons.dark_mode),
+                      ),
+                    ],
+                    selected: {widget.themeModeIndex},
+                    onSelectionChanged: (Set<int> newSelection) {
+                      widget.onThemeModeChanged(newSelection.first);
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
 
+          // Super Dark Mode Toggle
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Super Dark Mode",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        "Enhanced dark theme",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: widget.isSuperDarkMode,
+                  onChanged: widget.onSuperDarkModeChanged,
+                ),
+              ],
+            ),
+          ),
+
+          const Divider(),
+
           ListTile(
-            leading: Icon(Icons.info),
-            title: Text("About"),
+            leading: const Icon(Icons.info),
+            title: const Text("About"),
             onTap: () {
               showAbout(context);
             },
