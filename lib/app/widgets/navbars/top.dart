@@ -4,12 +4,14 @@ class TopBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final String screen;
   final VoidCallback? onSortPressed;
   final VoidCallback? onBackPressed;
+  final VoidCallback? onReloadPressed;
 
   const TopBarWidget({
     super.key,
     required this.screen,
     this.onSortPressed,
     this.onBackPressed,
+    this.onReloadPressed,
   });
 
   @override
@@ -25,15 +27,20 @@ class TopBarWidget extends StatelessWidget implements PreferredSizeWidget {
             )
           : null,
       title: Text(screen),
-      actions: onSortPressed != null
-          ? [
-              IconButton(
-                icon: const Icon(Icons.sort),
-                onPressed: onSortPressed,
-                tooltip: 'Sort',
-              ),
-            ]
-          : null,
+      actions: [
+        if (onReloadPressed != null)
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: onReloadPressed,
+            tooltip: 'Reload',
+          ),
+        if (onSortPressed != null)
+          IconButton(
+            icon: const Icon(Icons.sort),
+            onPressed: onSortPressed,
+            tooltip: 'Sort',
+          ),
+      ],
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
       ),

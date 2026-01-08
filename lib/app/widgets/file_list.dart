@@ -44,13 +44,19 @@ class FileListWidgetState extends State<FileListWidget> with AutomaticKeepAliveC
   void initState() {
     super.initState();
     // Load dữ liệu cho tab này khi khởi tạo
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.isSharedWithMe) {
-        widget.gds.ls(sharedWithMe: true, tabKey: widget.tabKey);
-      } else {
-        widget.gds.ls(tabKey: widget.tabKey);
-      }
-    });
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    // Đợi frame tiếp theo để đảm bảo widget đã được mount
+    await Future.delayed(Duration.zero);
+    if (!mounted) return;
+    
+    if (widget.isSharedWithMe) {
+      await widget.gds.ls(sharedWithMe: true, tabKey: widget.tabKey);
+    } else {
+      await widget.gds.ls(tabKey: widget.tabKey);
+    }
   }
 
   Widget folderTile({required FileModel fileModel, required List<FileModel> allFiles}) {

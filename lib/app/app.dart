@@ -52,12 +52,20 @@ class AppState extends State<App> {
     String? selectedClientEmail = await Credentials.getSelected();
     if (credList.isEmpty) {
       showLoginDialog(context, _login);
+      return;
     }
     if (selectedClientEmail == null) {
       selectedClientEmail = credList.first['client_email'];
       Credentials.setSelected(selectedClientEmail!);
     }
     await _login(selectedClientEmail);
+    
+    // Load dữ liệu ban đầu cho cả 2 tab sau khi login
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (mounted) {
+      gds.ls(tabKey: 'home');
+      gds.ls(sharedWithMe: true, tabKey: 'shared');
+    }
   }
 
   void _onOpen(FileModel fileModel, String tabKey, List<FileModel> allFiles) {
@@ -129,6 +137,10 @@ class AppState extends State<App> {
                       } else {
                         _sharedFileListKey.currentState?.showSortMenu();
                       }
+                    },
+                    onReloadPressed: () {
+                      final currentTabKey = _selectedIndex == 0 ? 'home' : 'shared';
+                      gds.refresh(currentTabKey);
                     },
                     onBackPressed: hasHistory
                         ? () => gds.rollback(currentTabKey)

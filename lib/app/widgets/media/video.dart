@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:manydrive/app/common/notification.dart';
 import 'package:manydrive/app/models/file_model.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
@@ -24,18 +25,33 @@ class VideoPlayerWidget extends StatefulWidget {
 }
 
 class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
-  late VideoPlayerController _videoPlayerController;
-  ChewieController? _chewieController;
   late PageController _pageController;
   List<FileModel> _videoFiles = [];
   int _currentIndex = 0;
   bool _isLoading = true;
+  bool _autoPlayNext = true;
+  
+  // Cache cho video players
+  final Map<int, VideoPlayerController> _videoControllers = {};
+  final Map<int, ChewieController> _chewieControllers = {};
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    _loadAutoPlaySetting();
     _loadVideoList();
+  }
+
+  Future<void> _loadAutoPlaySetting() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _autoPlayNext = prefs.getBool('video_autoplay_next') ?? true;
+    });
+  }
+
+  Future<void> _saveAutoPlaySetting(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('video_autoplay_next', value);
   }
 
   Future<void> _loadVideoList() async {
@@ -60,66 +76,70 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         _videoFiles = [widget.fileModel];
       }
       
+      // Khởi tạo PageController với index hiện tại
+      _pageController = PageController(initialPage: _currentIndex);
+      
       setState(() {
         _isLoading = false;
       });
       
-      // Khởi tạo player cho video đầu tiên
+      // Khởi tạo player cho video hiện tại
       await _initializePlayer(_currentIndex);
+      
+      // Preload video tiếp theo nếu có
+      if (_currentIndex < _videoFiles.length - 1) {
+        _preloadPlayer(_currentIndex + 1);
+      }
     } catch (e) {
       setState(() {
         _isLoading = false;
         _videoFiles = [widget.fileModel];
         _currentIndex = 0;
       });
+      _pageController = PageController(initialPage: 0);
       await _initializePlayer(0);
     }
   }
 
   Future<void> _initializePlayer(int index) async {
-    try {
-      // Dispose controller cũ nếu có
-      if (_chewieController != null) {
-        await _chewieController!.pause();
-        _chewieController!.dispose();
-        _chewieController = null;
-      }
-      
-      // Chỉ dispose nếu đã được khởi tạo
-      try {
-        if (_videoPlayerController.value.isInitialized) {
-          _videoPlayerController.dispose();
-        }
-      } catch (e) {
-        // Controller chưa được khởi tạo, bỏ qua
-      }
+    // Nếu đã có controller, không cần tạo lại
+    if (_videoControllers.containsKey(index) && 
+        _videoControllers[index]!.value.isInitialized) {
+      return;
+    }
 
+    try {
       final videoData = await _videoFiles[index].getBytes();
       final cacheKey = _videoFiles[index].file.id ?? _generateCacheKey(videoData);
 
       final cachedFile = await _getCachedVideo(cacheKey);
 
+      VideoPlayerController videoController;
       if (cachedFile != null && await cachedFile.exists()) {
-        _videoPlayerController = VideoPlayerController.file(cachedFile);
+        videoController = VideoPlayerController.file(cachedFile);
       } else {
         final savedFile = await _saveVideoToCache(cacheKey, videoData);
-        _videoPlayerController = VideoPlayerController.file(savedFile);
+        videoController = VideoPlayerController.file(savedFile);
       }
 
-      _videoPlayerController.addListener(_checkVideoEnd);
-      await _videoPlayerController.initialize();
+      videoController.addListener(() => _checkVideoEnd(index));
+      await videoController.initialize();
 
       if (!mounted) return;
 
+      final chewieController = ChewieController(
+        videoPlayerController: videoController,
+        aspectRatio:
+            videoController.value.aspectRatio > 0
+                ? videoController.value.aspectRatio
+                : 9 / 16,
+        autoPlay: index == _currentIndex,
+        looping: false,
+      );
+
       setState(() {
-        _chewieController = ChewieController(
-          videoPlayerController: _videoPlayerController,
-          aspectRatio:
-              _videoPlayerController.value.aspectRatio > 0
-                  ? _videoPlayerController.value.aspectRatio
-                  : 9 / 16,
-          autoPlay: true,
-        );
+        _videoControllers[index] = videoController;
+        _chewieControllers[index] = chewieController;
       });
     } catch (e) {
       if (mounted) {
@@ -130,6 +150,13 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         );
       }
     }
+  }
+
+  Future<void> _preloadPlayer(int index) async {
+    if (index < 0 || index >= _videoFiles.length) return;
+    if (_videoControllers.containsKey(index)) return;
+    
+    await _initializePlayer(index);
   }
 
   // Tạo cache key từ hash của video data
@@ -175,17 +202,59 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     return file;
   }
 
-  void _checkVideoEnd() {
-    final controller = _videoPlayerController;
+  void _checkVideoEnd(int index) {
+    if (!_videoControllers.containsKey(index)) return;
+    
+    final controller = _videoControllers[index]!;
     if (!controller.value.isInitialized) return;
 
     final isEnded = controller.value.position >= controller.value.duration;
     final isNotPlaying = !controller.value.isPlaying;
 
-    if (isEnded && isNotPlaying) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) Navigator.of(context).maybePop();
-      });
+    if (isEnded && isNotPlaying && index == _currentIndex) {
+      if (_autoPlayNext && _currentIndex < _videoFiles.length - 1) {
+        // Tự động chuyển sang video tiếp theo
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _pageController.nextPage(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          }
+        });
+      } else if (_currentIndex >= _videoFiles.length - 1) {
+        // Video cuối cùng, đóng player
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) Navigator.of(context).maybePop();
+        });
+      }
+    }
+  }
+
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+    
+    // Pause video trước
+    for (var i = 0; i < _videoFiles.length; i++) {
+      if (i != index && _videoControllers.containsKey(i)) {
+        _videoControllers[i]!.pause();
+      }
+    }
+    
+    // Play video hiện tại
+    if (_videoControllers.containsKey(index)) {
+      _videoControllers[index]!.play();
+    }
+    
+    // Preload video tiếp theo
+    if (index < _videoFiles.length - 1) {
+      _preloadPlayer(index + 1);
+    }
+    // Preload video trước
+    if (index > 0) {
+      _preloadPlayer(index - 1);
     }
   }
 
@@ -202,84 +271,133 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: GestureDetector(
-        onHorizontalDragEnd: (details) {
-          // Vuốt sang phải (velocity > 0) -> video trước
-          if (details.primaryVelocity! > 0) {
-            _previousVideo();
-          }
-          // Vuốt sang trái (velocity < 0) -> video tiếp theo
-          else if (details.primaryVelocity! < 0) {
-            _nextVideo();
-          }
-        },
-        child: Stack(
-          children: [
-            SafeArea(
-              top: false,
-              bottom: false,
-              child: Center(
-                child: _chewieController != null
-                    ? Chewie(controller: _chewieController!)
-                    : const CircularProgressIndicator(color: Colors.white),
-              ),
-            ),
-            // Hiển thị indicator số video
-            if (_videoFiles.length > 1)
-              Positioned(
-                top: 50,
-                left: 0,
-                right: 0,
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            itemCount: _videoFiles.length,
+            itemBuilder: (context, index) {
+              return SafeArea(
+                top: false,
+                bottom: false,
                 child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${_currentIndex + 1} / ${_videoFiles.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
+                  child: _chewieControllers.containsKey(index)
+                      ? Chewie(controller: _chewieControllers[index]!)
+                      : const CircularProgressIndicator(color: Colors.white),
+                ),
+              );
+            },
+          ),
+          
+          // Top bar với indicator và nút autoplay
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.7),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Video counter
+                      if (_videoFiles.length > 1)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${_currentIndex + 1} / ${_videoFiles.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                        )
+                      else
+                        const SizedBox.shrink(),
+                      
+                      // Autoplay toggle button
+                      if (_videoFiles.length > 1)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: IconButton(
+                            icon: Icon(
+                              _autoPlayNext 
+                                  ? Icons.playlist_play 
+                                  : Icons.playlist_remove,
+                              color: Colors.white,
+                            ),
+                            tooltip: _autoPlayNext 
+                                ? 'Autoplay: ON' 
+                                : 'Autoplay: OFF',
+                            onPressed: () {
+                              setState(() {
+                                _autoPlayNext = !_autoPlayNext;
+                              });
+                              _saveAutoPlaySetting(_autoPlayNext);
+                              
+                              // Show snackbar
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    _autoPlayNext 
+                                        ? 'Autoplay enabled' 
+                                        : 'Autoplay disabled',
+                                  ),
+                                  duration: const Duration(seconds: 1),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  void _nextVideo() {
-    if (_currentIndex < _videoFiles.length - 1) {
-      setState(() {
-        _currentIndex++;
-      });
-      _initializePlayer(_currentIndex);
-    }
-  }
-
-  void _previousVideo() {
-    if (_currentIndex > 0) {
-      setState(() {
-        _currentIndex--;
-      });
-      _initializePlayer(_currentIndex);
-    }
-  }
-
   @override
   void dispose() {
-    _videoPlayerController.removeListener(_checkVideoEnd);
-    _videoPlayerController.dispose();
-    _chewieController?.dispose();
     _pageController.dispose();
+    
+    // Dispose tất cả controllers
+    for (var controller in _videoControllers.values) {
+      controller.dispose();
+    }
+    for (var controller in _chewieControllers.values) {
+      controller.dispose();
+    }
+    
+    _videoControllers.clear();
+    _chewieControllers.clear();
+    
     super.dispose();
   }
 }
