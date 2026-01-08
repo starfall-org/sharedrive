@@ -122,8 +122,12 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         videoController = VideoPlayerController.file(savedFile);
       }
 
-      videoController.addListener(() => _checkVideoEnd(index));
       await videoController.initialize();
+      
+      // Thêm listener sau khi initialize để tránh lỗi
+      if (mounted) {
+        videoController.addListener(() => _checkVideoEnd(index));
+      }
 
       if (!mounted) return;
 
@@ -222,12 +226,8 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
             );
           }
         });
-      } else if (_currentIndex >= _videoFiles.length - 1) {
-        // Video cuối cùng, đóng player
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) Navigator.of(context).maybePop();
-        });
       }
+      // Đã loại bỏ cơ chế tự động thoát khi hết video
     }
   }
 
@@ -271,42 +271,38 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          PageView.builder(
-            controller: _pageController,
-            onPageChanged: _onPageChanged,
-            itemCount: _videoFiles.length,
-            itemBuilder: (context, index) {
-              return SafeArea(
-                top: false,
-                bottom: false,
-                child: Center(
+      body: SafeArea(
+        child: Stack(
+          children: [
+            PageView.builder(
+              controller: _pageController,
+              onPageChanged: _onPageChanged,
+              itemCount: _videoFiles.length,
+              itemBuilder: (context, index) {
+                return Center(
                   child: _chewieControllers.containsKey(index)
                       ? Chewie(controller: _chewieControllers[index]!)
                       : const CircularProgressIndicator(color: Colors.white),
+                );
+              },
+            ),
+            
+            // Top bar với indicator và nút autoplay
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.7),
+                      Colors.transparent,
+                    ],
+                  ),
                 ),
-              );
-            },
-          ),
-          
-          // Top bar với indicator và nút autoplay
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.7),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-              child: SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   child: Row(
@@ -377,8 +373,8 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
