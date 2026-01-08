@@ -44,6 +44,7 @@ class GDrive {
     bool sharedWithMe = false,
     bool trashed = false,
     required String tabKey,
+    bool isRollback = false,
   }) async {
     if (!isLoggedIn) {
       return;
@@ -71,8 +72,8 @@ class GDrive {
       } else if (folderId != null) {
         conditions.add("'$folderId' in parents");
         keyName = '${tabKey}_$folderId';
-        // Chỉ thêm vào pathHistory nếu chưa có hoặc khác với path cuối cùng
-        if (_pathHistories[tabKey]!.isEmpty || _pathHistories[tabKey]!.last != folderId) {
+        // Chỉ thêm vào pathHistory nếu không phải rollback và chưa có hoặc khác với path cuối cùng
+        if (!isRollback && (_pathHistories[tabKey]!.isEmpty || _pathHistories[tabKey]!.last != folderId)) {
           _pathHistories[tabKey]!.add(folderId);
         }
       } else if (sharedWithMe) {
@@ -143,13 +144,13 @@ class GDrive {
     
     if (_pathHistories[tabKey]!.isNotEmpty) {
       String lastPath = _pathHistories[tabKey]!.last;
-      await ls(folderId: lastPath, tabKey: tabKey);
+      await ls(folderId: lastPath, tabKey: tabKey, isRollback: true);
     } else {
       // Quay về root hoặc shared tùy theo tab
       if (tabKey == 'shared') {
-        await ls(sharedWithMe: true, tabKey: tabKey);
+        await ls(sharedWithMe: true, tabKey: tabKey, isRollback: true);
       } else {
-        await ls(tabKey: tabKey);
+        await ls(tabKey: tabKey, isRollback: true);
       }
     }
   }
@@ -161,14 +162,14 @@ class GDrive {
     if (pathHistory.isEmpty) {
       // Refresh root hoặc shared tùy theo tab
       if (tabKey == 'shared') {
-        await ls(sharedWithMe: true, tabKey: tabKey);
+        await ls(sharedWithMe: true, tabKey: tabKey, isRollback: true);
       } else {
-        await ls(tabKey: tabKey);
+        await ls(tabKey: tabKey, isRollback: true);
       }
     } else {
       // Refresh thư mục hiện tại
       String currentPath = pathHistory.last;
-      await ls(folderId: currentPath, tabKey: tabKey);
+      await ls(folderId: currentPath, tabKey: tabKey, isRollback: true);
     }
   }
 
